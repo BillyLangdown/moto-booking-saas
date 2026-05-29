@@ -53,6 +53,26 @@ export interface Booking {
   status: BookingStatus
 }
 
+export interface CreateSlotInput {
+  tenantId: TenantId
+  resourceId: string
+  licenceType: LicenceType
+  date: string      // yyyy-mm-dd
+  startTime: string // HH:mm
+  endTime: string   // HH:mm
+  capacity: number
+}
+
+export interface UpdateTenantInput {
+  name: string
+  email: string
+  phone: string
+  address: string
+  description: string
+  primaryColor: string
+  accentColor: string
+}
+
 export interface CreateBookingInput {
   tenantId: TenantId
   slotId: string
