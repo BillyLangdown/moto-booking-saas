@@ -32,11 +32,9 @@ export default async function SuperAdminPage() {
         ) : (
           <ul className="divide-y divide-border">
             {tenants.map((t) => (
-              <li key={t.id}>
-                <Link
-                  href={`/platform/${t.id}`}
-                  className="flex items-center gap-4 px-5 py-4 hover:bg-subtle transition-colors group"
-                >
+              <li key={t.id} className="relative group hover:bg-subtle transition-colors">
+                <Link href={`/platform/${t.id}`} className="absolute inset-0" aria-label={t.name} />
+                <div className="relative flex items-center gap-4 px-5 py-4">
                   <div
                     className="flex h-9 w-9 items-center justify-center rounded-lg text-white text-sm font-bold shrink-0"
                     style={{ backgroundColor: t.branding.primaryColor }}
@@ -47,21 +45,21 @@ export default async function SuperAdminPage() {
                     <p className="font-medium text-sm text-ink">{t.name}</p>
                     <p className="text-xs text-secondary mt-0.5">/book/{t.slug}</p>
                   </div>
-                  <div className="flex items-center gap-4 shrink-0">
+                  <div className="relative z-10 flex items-center gap-4 shrink-0">
                     {t.email && <span className="text-xs text-secondary hidden sm:block">{t.email}</span>}
-                    <Link
+                    <a
                       href={`/book/${t.slug}`}
                       target="_blank"
-                      onClick={(e) => e.stopPropagation()}
+                      rel="noopener noreferrer"
                       className="text-xs text-accent hover:underline hidden sm:block"
                     >
                       Booking page ↗
-                    </Link>
+                    </a>
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-secondary group-hover:text-ink transition-colors" aria-hidden="true">
                       <path d="M5 2.5L9 7l-4 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                </Link>
+                </div>
               </li>
             ))}
           </ul>
