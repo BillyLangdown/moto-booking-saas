@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { getAuthSuperAdmin } from '@/lib/auth'
 import { signOutAction } from '@/app/login/actions'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = { title: 'Super Admin — BookMoto' }
 
 export default async function SuperAdminLayout({ children }: { children: React.ReactNode }) {

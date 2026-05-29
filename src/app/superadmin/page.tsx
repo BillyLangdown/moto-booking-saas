@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { tenantService } from '@/services/tenantService'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SuperAdminPage() {
   const tenants = await tenantService.getAllTenants()
 

@@ -11,11 +11,15 @@ export const getAuthSuperAdmin = cache(async (): Promise<void> => {
 
   if (!user?.email) redirect('/login')
 
-  const { data } = await adminSupabase
+  const { data, error } = await adminSupabase
     .from('users')
     .select('role')
     .eq('email', user.email)
     .single()
+
+  if (error) {
+    console.error('[getAuthSuperAdmin] users query error:', error.message, 'email:', user.email)
+  }
 
   if (data?.role !== 'superadmin') redirect('/dashboard/bookings')
 })
