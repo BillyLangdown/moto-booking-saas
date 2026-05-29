@@ -1,10 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
+import { adminSupabase as supabase } from '@/lib/supabase/admin'
 import type { Booking, BookingStatus, CreateBookingInput, LicenceType } from '@/types'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-)
 
 // DB stores customer_name / customer_email — we map to the app's name / email.
 function mapBooking(row: Record<string, unknown>): Booking {

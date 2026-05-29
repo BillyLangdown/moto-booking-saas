@@ -1,10 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
+import { adminSupabase as supabase } from '@/lib/supabase/admin'
 import type { Resource } from '@/types'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-)
 
 export const resourceService = {
   async getResources(tenantId: string): Promise<Resource[]> {

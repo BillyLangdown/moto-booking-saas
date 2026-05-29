@@ -1,10 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-import type { Tenant } from '@/types'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-)
+import { adminSupabase as supabase } from '@/lib/supabase/admin'
+import type { Tenant, UpdateTenantInput } from '@/types'
 
 // Map DB row → Tenant type.
 // branding is stored as JSONB. Handles both snake_case and camelCase keys.
@@ -50,5 +45,24 @@ export const tenantService = {
     const { data, error } = await supabase.from('tenants').select('*')
     if (error || !data) return []
     return (data as Record<string, unknown>[]).map(mapTenant)
+  },
+
+  async updateTenant(id: string, input: UpdateTenantInput): Promise<void> {
+    const { error } = await supabase
+      .from('tenants')
+      .update({
+        name:        input.name,
+        email:       input.email,
+        phone:       input.phone,
+        address:     input.address,
+        description: input.description,
+        branding: {
+          primary_color: input.primaryColor,
+          accent_color:  input.accentColor,
+        },
+      })
+      .eq('id', id)
+
+    if (error) throw new Error(error.message)
   },
 }

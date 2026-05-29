@@ -1,10 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-import type { AvailabilitySlot, LicenceType } from '@/types'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-)
+import { adminSupabase as supabase } from '@/lib/supabase/admin'
+import type { AvailabilitySlot, CreateSlotInput, LicenceType } from '@/types'
 
 // start_time / end_time are stored as TIMESTAMP in Supabase.
 // We derive the ISO date and HH:mm time strings from them.
@@ -78,5 +73,31 @@ export const availabilityService = {
 
     if (error || !data) return null
     return mapSlot(data as Record<string, unknown>)
+  },
+
+  async createSlot(input: CreateSlotInput): Promise<void> {
+    const startTimestamp = new Date(`${input.date}T${input.startTime}:00`).toISOString()
+    const endTimestamp   = new Date(`${input.date}T${input.endTime}:00`).toISOString()
+
+    const { error } = await supabase.from('availability_slots').insert({
+      tenant_id:    input.tenantId,
+      resource_id:  input.resourceId,
+      licence_type: input.licenceType,
+      start_time:   startTimestamp,
+      end_time:     endTimestamp,
+      capacity:     input.capacity,
+      booked:       0,
+    })
+
+    if (error) throw new Error(error.message)
+  },
+
+  async deleteSlot(slotId: string): Promise<void> {
+    const { error } = await supabase
+      .from('availability_slots')
+      .delete()
+      .eq('id', slotId)
+
+    if (error) throw new Error(error.message)
   },
 }
