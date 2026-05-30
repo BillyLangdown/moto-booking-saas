@@ -12,9 +12,14 @@ export async function createBookingAction(
 ): Promise<{ booking?: Booking; error?: string }> {
   try {
     const booking = await bookingService.createBooking(input)
-    tenantService.getTenantById(input.tenantId).then((tenant) => {
-      if (tenant) sendBookingConfirmation(booking, input.startTime, input.endTime, tenant)
-    })
+    void (async () => {
+      try {
+        const tenant = await tenantService.getTenantById(input.tenantId)
+        if (tenant) await sendBookingConfirmation(booking, input.startTime, input.endTime, tenant)
+      } catch {
+        // email failures are non-fatal — booking already succeeded
+      }
+    })()
     return { booking }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Failed to create booking' }

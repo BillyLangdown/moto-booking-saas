@@ -21,6 +21,7 @@ export async function sendBookingConfirmation(
   endTime: string,
   tenant: Tenant,
 ): Promise<void> {
+  try {
   if (!resend) return
 
   const start = formatISODate(startTime)
@@ -31,13 +32,15 @@ export async function sendBookingConfirmation(
     tenant.phone && `Phone: ${tenant.phone}`,
   ].filter(Boolean).join('\n')
 
+  const accentColor = tenant.branding?.accentColor ?? '#6366f1'
+
   const html = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family:sans-serif;color:#0f172a;background:#f8fafc;margin:0;padding:32px 16px;">
   <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
-    <div style="background:${tenant.branding.accentColor};padding:24px 28px;">
+    <div style="background:${accentColor};padding:24px 28px;">
       <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">${tenant.name}</p>
     </div>
     <div style="padding:28px;">
@@ -84,7 +87,6 @@ Booking ref: ${booking.id}
 
 ${contactLines ? `Contact the school:\n${contactLines}` : ''}`
 
-  try {
     await resend.emails.send({
       from: FROM,
       to: booking.email,
