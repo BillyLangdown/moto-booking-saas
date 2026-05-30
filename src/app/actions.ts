@@ -11,21 +11,45 @@ export async function createBookingAction(
   input: CreateBookingInput,
 ): Promise<{ booking?: Booking; error?: string }> {
   try {
-    const booking = await bookingService.createBooking(input)
+    const tenant = await tenantService.getTenantById(input.tenantId)
+    const autoConfirm = tenant?.autoConfirm !== false
+    const booking = await bookingService.createBooking({ ...input, status: autoConfirm ? 'confirmed' : 'pending' })
+
     void (async () => {
       try {
-        const tenant = await tenantService.getTenantById(input.tenantId)
-        if (tenant) {
+        if (!tenant) return
+        await sendAdminNotification(booking, input.startTime, input.endTime, tenant)
+        if (autoConfirm) {
           await sendBookingConfirmation(booking, input.startTime, input.endTime, tenant)
-          await sendAdminNotification(booking, input.startTime, input.endTime, tenant)
         }
       } catch {
-        // email failures are non-fatal — booking already succeeded
+        // email failures are non-fatal
       }
     })()
+
     return { booking }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Failed to create booking' }
+  }
+}
+
+export async function confirmBookingAction(bookingId: string): Promise<{ error?: string }> {
+  try {
+    const booking = await bookingService.confirmBooking(bookingId)
+    void (async () => {
+      try {
+        const tenant = await tenantService.getTenantById(booking.tenantId)
+        if (tenant && booking.startTimeIso && booking.endTimeIso) {
+          await sendBookingConfirmation(booking, booking.startTimeIso, booking.endTimeIso, tenant)
+        }
+      } catch {
+        // email failures are non-fatal
+      }
+    })()
+    revalidatePath('/dashboard/bookings')
+    return {}
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to confirm booking' }
   }
 }
 

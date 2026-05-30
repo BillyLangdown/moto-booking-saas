@@ -26,6 +26,7 @@ export default function SettingsForm({ tenant }: Props) {
   const [logoUrl, setLogoUrl]         = useState(tenant.logoUrl ?? '')
   const [themeId, setThemeId]         = useState(tenant.theme ?? THEMES[0].id)
   const [questions, setQuestions]     = useState<IntakeQuestion[]>(tenant.intakeQuestions ?? [])
+  const [autoConfirm, setAutoConfirm] = useState(tenant.autoConfirm !== false)
 
   const [saving, setSaving]       = useState(false)
   const [saved, setSaved]         = useState(false)
@@ -43,6 +44,7 @@ export default function SettingsForm({ tenant }: Props) {
       theme: themeId,
       primaryColor: theme.primaryColor,
       accentColor:  theme.accentColor,
+      autoConfirm,
     }
     try {
       await updateTenantAction(tenant.id, input)
@@ -87,6 +89,40 @@ export default function SettingsForm({ tenant }: Props) {
                 <Input label="Phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
               <Input label="Address" value={address} onChange={(e) => setAddress(e.target.value)} />
+            </div>
+          </div>
+
+          {/* Booking behaviour */}
+          <h2 className="text-sm font-semibold text-ink -mb-2">Bookings</h2>
+          <div className={sectionClass}>
+            <div className="p-5">
+              <label className="flex items-start justify-between gap-4 cursor-pointer">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium text-ink">Auto-confirm bookings</span>
+                  <span className="text-xs text-secondary">
+                    {autoConfirm
+                      ? 'Bookings are confirmed instantly and the customer gets a confirmation email immediately.'
+                      : 'Bookings are held as pending. You confirm each one manually — then the customer gets their email.'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={autoConfirm}
+                  onClick={() => setAutoConfirm(v => !v)}
+                  className={[
+                    'relative shrink-0 mt-0.5 h-6 w-11 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+                    autoConfirm ? 'bg-accent' : 'bg-border',
+                  ].join(' ')}
+                >
+                  <span
+                    className={[
+                      'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+                      autoConfirm ? 'translate-x-5' : 'translate-x-0',
+                    ].join(' ')}
+                  />
+                </button>
+              </label>
             </div>
           </div>
 

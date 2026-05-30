@@ -34,6 +34,8 @@ function mapBooking(row: Record<string, unknown>): Booking {
     intakeAnswers: (row.intake_answers as Record<string, string>) ?? {},
     createdAt:   row.created_at as string,
     status:      (row.status as BookingStatus) ?? 'confirmed',
+    startTimeIso: startIso ?? undefined,
+    endTimeIso:   endIso   ?? undefined,
   }
 }
 
@@ -76,12 +78,24 @@ export const bookingService = {
         intake_answers: input.intakeAnswers,
         start_time:     input.startTime,
         end_time:       input.endTime,
-        status:         'confirmed',
+        status:         input.status ?? 'confirmed',
       })
       .select()
       .single()
 
     if (error || !data) throw new Error(error?.message ?? 'Failed to create booking')
+    return mapBooking(data as Record<string, unknown>)
+  },
+
+  async confirmBooking(bookingId: string): Promise<Booking> {
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({ status: 'confirmed' })
+      .eq('id', bookingId)
+      .select()
+      .single()
+
+    if (error || !data) throw new Error(error?.message ?? 'Failed to confirm booking')
     return mapBooking(data as Record<string, unknown>)
   },
 }

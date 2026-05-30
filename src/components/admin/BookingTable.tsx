@@ -1,5 +1,9 @@
+'use client'
+
+import { useTransition } from 'react'
 import type { Booking } from '@/types'
 import Badge from '@/components/ui/Badge'
+import { confirmBookingAction } from '@/app/actions'
 
 interface Props {
   bookings: Booking[]
@@ -15,6 +19,19 @@ function formatSlotDate(isoDate: string) {
   return new Date(`${isoDate}T00:00:00`).toLocaleDateString('en-GB', {
     weekday: 'short', day: 'numeric', month: 'short',
   })
+}
+
+function ConfirmButton({ bookingId }: { bookingId: string }) {
+  const [pending, startTransition] = useTransition()
+  return (
+    <button
+      disabled={pending}
+      onClick={() => startTransition(async () => { await confirmBookingAction(bookingId) })}
+      className="rounded-md bg-accent px-2.5 py-1 text-xs font-semibold text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
+    >
+      {pending ? 'Confirming…' : 'Confirm'}
+    </button>
+  )
 }
 
 export default function BookingTable({ bookings }: Props) {
@@ -49,7 +66,10 @@ export default function BookingTable({ bookings }: Props) {
                 <span className="text-xs text-secondary">{b.slot.startTime}–{b.slot.endTime}</span>
               )}
             </div>
-            <p className="text-xs text-muted">Booked {formatDate(b.createdAt)}</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted">Booked {formatDate(b.createdAt)}</p>
+              {b.status === 'pending' && <ConfirmButton bookingId={b.id} />}
+            </div>
           </li>
         ))}
       </ul>
@@ -89,7 +109,10 @@ export default function BookingTable({ bookings }: Props) {
               </td>
               <td className="px-5 py-3.5 text-secondary">{formatDate(b.createdAt)}</td>
               <td className="px-5 py-3.5">
-                <Badge variant="status" value={b.status} />
+                <div className="flex items-center gap-2">
+                  <Badge variant="status" value={b.status} />
+                  {b.status === 'pending' && <ConfirmButton bookingId={b.id} />}
+                </div>
               </td>
             </tr>
           ))}

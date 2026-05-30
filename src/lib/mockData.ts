@@ -18,6 +18,7 @@ export const mockTenants: Tenant[] = [
     },
     intakeQuestions: [],
     onboardingCompleted: true,
+    autoConfirm: true,
   },
 ]
 

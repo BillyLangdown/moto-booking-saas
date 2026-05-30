@@ -26,6 +26,7 @@ export interface Tenant {
   theme?: string
   intakeQuestions: IntakeQuestion[]
   onboardingCompleted: boolean
+  autoConfirm: boolean
   branding: {
     primaryColor: string
     accentColor: string
@@ -65,6 +66,8 @@ export interface Booking {
   intakeAnswers: Record<string, string>
   createdAt: string
   status: BookingStatus
+  startTimeIso?: string
+  endTimeIso?: string
 }
 
 export interface CreateSlotInput {
@@ -87,6 +90,7 @@ export interface UpdateTenantInput {
   theme?: string
   intakeQuestions?: IntakeQuestion[]
   onboardingCompleted?: boolean
+  autoConfirm?: boolean
   primaryColor: string
   accentColor: string
 }
@@ -103,4 +107,5 @@ export interface CreateBookingInput {
   intakeAnswers: Record<string, string>
   startTime: string
   endTime: string
+  status?: BookingStatus
 }
