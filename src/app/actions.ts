@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { bookingService } from '@/services/bookingService'
 import { availabilityService } from '@/services/availabilityService'
 import { tenantService } from '@/services/tenantService'
-import { sendBookingConfirmation } from '@/lib/email'
+import { sendBookingConfirmation, sendAdminNotification } from '@/lib/email'
 import type { Booking, CreateBookingInput, CreateSlotInput, IntakeQuestion, UpdateTenantInput } from '@/types'
 
 export async function createBookingAction(
@@ -15,7 +15,10 @@ export async function createBookingAction(
     void (async () => {
       try {
         const tenant = await tenantService.getTenantById(input.tenantId)
-        if (tenant) await sendBookingConfirmation(booking, input.startTime, input.endTime, tenant)
+        if (tenant) {
+          await sendBookingConfirmation(booking, input.startTime, input.endTime, tenant)
+          await sendAdminNotification(booking, input.startTime, input.endTime, tenant)
+        }
       } catch {
         // email failures are non-fatal — booking already succeeded
       }
