@@ -60,6 +60,8 @@ export const bookingService = {
         notes:          input.notes ?? null,
         licence_type:   input.licenceType,
         intake_answers: input.intakeAnswers,
+        start_time:     input.startTime,
+        end_time:       input.endTime,
         status:         'confirmed',
       })
       .select()
