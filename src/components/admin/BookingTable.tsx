@@ -7,6 +7,7 @@ import { confirmBookingAction } from '@/app/actions'
 
 interface Props {
   bookings: Booking[]
+  onSelect: (booking: Booking) => void
 }
 
 function formatDate(iso: string) {
@@ -34,7 +35,7 @@ function ConfirmButton({ bookingId }: { bookingId: string }) {
   )
 }
 
-export default function BookingTable({ bookings }: Props) {
+export default function BookingTable({ bookings, onSelect }: Props) {
   if (bookings.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-white py-20 text-center">
@@ -49,7 +50,7 @@ export default function BookingTable({ bookings }: Props) {
       {/* Mobile: stacked cards */}
       <ul className="divide-y divide-border sm:hidden">
         {bookings.map((b) => (
-          <li key={b.id} className="p-4 flex flex-col gap-2.5">
+          <li key={b.id} className="p-4 flex flex-col gap-2.5 cursor-pointer active:bg-subtle/60" onClick={() => onSelect(b)}>
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="font-semibold text-sm text-ink leading-tight">{b.name}</p>
@@ -87,7 +88,7 @@ export default function BookingTable({ bookings }: Props) {
         </thead>
         <tbody className="divide-y divide-border">
           {bookings.map((b) => (
-            <tr key={b.id} className="hover:bg-subtle/60 transition-colors">
+            <tr key={b.id} className="hover:bg-subtle/60 transition-colors cursor-pointer" onClick={() => onSelect(b)}>
               <td className="px-5 py-3.5">
                 <p className="font-medium text-ink">{b.name}</p>
                 <p className="text-xs text-secondary mt-0.5">{b.email}</p>

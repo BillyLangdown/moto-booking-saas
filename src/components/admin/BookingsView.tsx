@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { Booking } from '@/types'
 import BookingTable from './BookingTable'
 import CalendarView from './CalendarView'
+import BookingDrawer from './BookingDrawer'
 
 interface Props {
   bookings: Booking[]
@@ -13,6 +14,7 @@ type View = 'list' | 'calendar'
 
 export default function BookingsView({ bookings }: Props) {
   const [view, setView] = useState<View>('list')
+  const [selected, setSelected] = useState<Booking | null>(null)
 
   return (
     <div className="flex flex-col gap-4">
@@ -48,10 +50,12 @@ export default function BookingsView({ bookings }: Props) {
       </div>
 
       {view === 'list' ? (
-        <BookingTable bookings={bookings} />
+        <BookingTable bookings={bookings} onSelect={setSelected} />
       ) : (
-        <CalendarView bookings={bookings} />
+        <CalendarView bookings={bookings} onSelect={setSelected} />
       )}
+
+      <BookingDrawer booking={selected} onClose={() => setSelected(null)} />
     </div>
   )
 }

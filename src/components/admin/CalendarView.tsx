@@ -5,6 +5,7 @@ import type { Booking } from '@/types'
 
 interface Props {
   bookings: Booking[]
+  onSelect: (booking: Booking) => void
 }
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 7) // 07:00–19:00
@@ -30,7 +31,7 @@ function fmt(d: Date) {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-export default function CalendarView({ bookings }: Props) {
+export default function CalendarView({ bookings, onSelect }: Props) {
   const [baseDate, setBaseDate] = useState(() => new Date())
   const weekDates = getWeekDates(baseDate)
   const todayStr  = isoDate(new Date())
@@ -136,14 +137,15 @@ export default function CalendarView({ bookings }: Props) {
                     const height = bookingHeight(b.slot.startTime, b.slot.endTime)
                     if (top < 0 || top > gridHeight) return null
                     return (
-                      <div
+                      <button
                         key={b.id}
-                        className="absolute mx-0.5 rounded border bg-accent/10 border-accent/30 px-1.5 py-1 overflow-hidden"
+                        onClick={() => onSelect(b)}
+                        className="absolute mx-0.5 rounded border bg-accent/10 border-accent/30 px-1.5 py-1 overflow-hidden text-left w-[calc(100%-4px)] hover:bg-accent/20 transition-colors"
                         style={{ top, height, left: 0, right: 0 }}
                       >
                         <p className="text-xs font-semibold text-ink leading-tight truncate">{b.name}</p>
                         <p className="text-xs text-secondary truncate">{b.slot.startTime}–{b.slot.endTime}</p>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
