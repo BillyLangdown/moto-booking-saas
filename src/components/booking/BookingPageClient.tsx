@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { AvailabilitySlot, Booking, Tenant } from '@/types'
 import { getTheme } from '@/lib/themes'
-import SlotList from '@/components/booking/SlotList'
+import SlotView from '@/components/booking/SlotView'
 import BookingForm from '@/components/booking/BookingForm'
 import BookingSuccess from '@/components/booking/BookingSuccess'
 
@@ -68,7 +68,7 @@ export default function BookingPageClient({ tenant, slots }: Props) {
                 <p className="text-sm text-secondary mt-1 leading-relaxed">{tenant.description}</p>
               )}
             </div>
-            <SlotList slots={slots} onSelect={handleSelectSlot} />
+            <SlotView slots={slots} onSelect={handleSelectSlot} />
           </>
         )}
 
