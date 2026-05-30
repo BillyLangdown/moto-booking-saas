@@ -1,6 +1,7 @@
 import Sidebar from '@/components/admin/Sidebar'
 import MobileNav from '@/components/admin/MobileNav'
 import { getAuthTenant } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 
 export const metadata = {
   title: 'Dashboard — BookMoto',
@@ -8,6 +9,7 @@ export const metadata = {
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const tenant = await getAuthTenant()
+  if (!tenant.onboardingCompleted) redirect('/setup')
 
   return (
     <div className="flex h-screen overflow-hidden bg-subtle">

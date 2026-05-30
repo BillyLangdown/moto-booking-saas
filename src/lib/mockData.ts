@@ -16,6 +16,8 @@ export const mockTenants: Tenant[] = [
       primaryColor: '#1e293b',
       accentColor: '#f97316',
     },
+    intakeQuestions: [],
+    onboardingCompleted: true,
   },
 ]
 
@@ -147,6 +149,7 @@ export const mockBookings: Booking[] = [
     email: 'james.carter@email.com',
     licenceType: 'CBT',
     notes: 'Never ridden before. Coming from a bicycle background.',
+    intakeAnswers: {},
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     status: 'confirmed',
   },
@@ -157,6 +160,7 @@ export const mockBookings: Booking[] = [
     name: 'Priya Sharma',
     email: 'priya.sharma@email.com',
     licenceType: 'A2',
+    intakeAnswers: {},
     createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     status: 'confirmed',
   },

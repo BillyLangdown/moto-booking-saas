@@ -25,9 +25,10 @@ export const createClient = async (request: NextRequest) => {
   const { data: { user } } = await supabase.auth.getUser()
 
   const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
+  const isSetup     = request.nextUrl.pathname === '/setup'
   const isLogin     = request.nextUrl.pathname === '/login'
 
-  if (isDashboard && !user) {
+  if ((isDashboard || isSetup) && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

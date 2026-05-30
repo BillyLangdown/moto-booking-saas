@@ -1,8 +1,6 @@
 import { adminSupabase as supabase } from '@/lib/supabase/admin'
-import type { Tenant, UpdateTenantInput } from '@/types'
+import type { IntakeQuestion, Tenant, UpdateTenantInput } from '@/types'
 
-// Map DB row → Tenant type.
-// branding is stored as JSONB. Handles both snake_case and camelCase keys.
 function mapTenant(row: Record<string, unknown>): Tenant {
   const b = (row.branding ?? {}) as Record<string, string>
   return {
@@ -13,6 +11,10 @@ function mapTenant(row: Record<string, unknown>): Tenant {
     phone:       (row.phone as string) ?? '',
     email:       (row.email as string) ?? '',
     address:     (row.address as string) ?? '',
+    logoUrl:     b.logo_url ?? undefined,
+    theme:       b.theme ?? undefined,
+    intakeQuestions: (row.intake_questions as IntakeQuestion[]) ?? [],
+    onboardingCompleted: (row.onboarding_completed as boolean) ?? false,
     branding: {
       primaryColor: b.primary_color ?? b.primaryColor ?? '#1e293b',
       accentColor:  b.accent_color  ?? b.accentColor  ?? '#f97316',
@@ -47,22 +49,45 @@ export const tenantService = {
     return (data as Record<string, unknown>[]).map(mapTenant)
   },
 
-  async updateTenant(id: string, input: UpdateTenantInput): Promise<void> {
+  async updateIntakeQuestions(id: string, questions: IntakeQuestion[]): Promise<void> {
     const { error } = await supabase
       .from('tenants')
-      .update({
-        name:        input.name,
-        email:       input.email,
-        phone:       input.phone,
-        address:     input.address,
-        description: input.description,
-        branding: {
-          primary_color: input.primaryColor,
-          accent_color:  input.accentColor,
-        },
-      })
+      .update({ intake_questions: questions })
       .eq('id', id)
+    if (error) throw new Error(error.message)
+  },
 
+  async completeOnboarding(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('tenants')
+      .update({ onboarding_completed: true })
+      .eq('id', id)
+    if (error) throw new Error(error.message)
+  },
+
+  async updateTenant(id: string, input: UpdateTenantInput): Promise<void> {
+    const updates: Record<string, unknown> = {
+      name:        input.name,
+      email:       input.email,
+      phone:       input.phone,
+      address:     input.address,
+      description: input.description,
+      branding: {
+        primary_color: input.primaryColor,
+        accent_color:  input.accentColor,
+        logo_url:      input.logoUrl ?? null,
+        theme:         input.theme ?? null,
+      },
+    }
+
+    if (input.intakeQuestions !== undefined) {
+      updates.intake_questions = input.intakeQuestions
+    }
+    if (input.onboardingCompleted !== undefined) {
+      updates.onboarding_completed = input.onboardingCompleted
+    }
+
+    const { error } = await supabase.from('tenants').update(updates).eq('id', id)
     if (error) throw new Error(error.message)
   },
 }

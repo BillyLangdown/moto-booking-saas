@@ -6,6 +6,14 @@ export type ResourceType = 'instructor' | 'bike'
 
 export type BookingStatus = 'confirmed' | 'pending' | 'cancelled'
 
+export interface IntakeQuestion {
+  id: string
+  type: 'text' | 'number' | 'dropdown' | 'yesno'
+  label: string
+  required: boolean
+  options?: string[]
+}
+
 export interface Tenant {
   id: TenantId
   slug: string
@@ -14,6 +22,10 @@ export interface Tenant {
   phone: string
   email: string
   address: string
+  logoUrl?: string
+  theme?: string
+  intakeQuestions: IntakeQuestion[]
+  onboardingCompleted: boolean
   branding: {
     primaryColor: string
     accentColor: string
@@ -33,9 +45,9 @@ export interface AvailabilitySlot {
   resourceId: string
   resource: Resource
   licenceType: LicenceType
-  date: string       // ISO date yyyy-mm-dd
-  startTime: string  // HH:mm
-  endTime: string    // HH:mm
+  date: string
+  startTime: string
+  endTime: string
   capacity: number
   booked: number
 }
@@ -44,12 +56,14 @@ export interface Booking {
   id: string
   tenantId: TenantId
   slotId: string
-  slot?: AvailabilitySlot
+  slot?: Pick<AvailabilitySlot, 'date' | 'startTime' | 'endTime' | 'licenceType'>
   name: string
   email: string
+  phone?: string
   notes?: string
   licenceType: LicenceType
-  createdAt: string  // ISO datetime
+  intakeAnswers: Record<string, string>
+  createdAt: string
   status: BookingStatus
 }
 
@@ -57,9 +71,9 @@ export interface CreateSlotInput {
   tenantId: TenantId
   resourceId: string
   licenceType: LicenceType
-  date: string      // yyyy-mm-dd
-  startTime: string // HH:mm
-  endTime: string   // HH:mm
+  date: string
+  startTime: string
+  endTime: string
   capacity: number
 }
 
@@ -69,6 +83,10 @@ export interface UpdateTenantInput {
   phone: string
   address: string
   description: string
+  logoUrl?: string
+  theme?: string
+  intakeQuestions?: IntakeQuestion[]
+  onboardingCompleted?: boolean
   primaryColor: string
   accentColor: string
 }
@@ -79,8 +97,10 @@ export interface CreateBookingInput {
   resourceId: string
   name: string
   email: string
+  phone?: string
   notes?: string
   licenceType: LicenceType
-  startTime: string  // ISO timestamp from the slot
-  endTime: string    // ISO timestamp from the slot
+  intakeAnswers: Record<string, string>
+  startTime: string
+  endTime: string
 }

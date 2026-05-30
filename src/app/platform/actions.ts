@@ -10,6 +10,7 @@ interface CreateSchoolInput {
   phone: string
   address: string
   description: string
+  theme: string
   primaryColor: string
   accentColor: string
   adminEmail: string
@@ -30,6 +31,7 @@ export async function createSchoolAction(
       address:     input.address,
       description: input.description,
       branding: {
+        theme:         input.theme,
         primary_color: input.primaryColor,
         accent_color:  input.accentColor,
       },

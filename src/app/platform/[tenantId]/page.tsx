@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { tenantService } from '@/services/tenantService'
 import { resourceService } from '@/services/resourceService'
+import { getTheme } from '@/lib/themes'
 import ResourceManager from '@/components/platform/ResourceManager'
 
 interface Props {
@@ -33,7 +34,7 @@ export default async function SchoolDetailPage({ params }: Props) {
       <div className="flex items-center gap-4">
         <div
           className="flex h-12 w-12 items-center justify-center rounded-xl text-white text-lg font-bold shrink-0"
-          style={{ backgroundColor: tenant.branding.primaryColor }}
+          style={{ backgroundColor: getTheme(tenant.theme).primaryColor }}
         >
           {tenant.name.charAt(0)}
         </div>
@@ -71,10 +72,11 @@ export default async function SchoolDetailPage({ params }: Props) {
           <span className="font-mono text-xs text-ink">{tenant.id}</span>
         </div>
         <div className="px-5 py-3 flex items-center justify-between">
-          <span className="text-sm text-secondary">Branding</span>
+          <span className="text-sm text-secondary">Theme</span>
           <div className="flex items-center gap-2">
-            <div className="h-5 w-5 rounded border border-border" style={{ backgroundColor: tenant.branding.primaryColor }} />
-            <div className="h-5 w-5 rounded border border-border" style={{ backgroundColor: tenant.branding.accentColor }} />
+            <div className="h-4 w-4 rounded-full" style={{ backgroundColor: getTheme(tenant.theme).primaryColor }} />
+            <div className="h-4 w-4 rounded-full" style={{ backgroundColor: getTheme(tenant.theme).accentColor }} />
+            <span className="text-sm text-ink">{getTheme(tenant.theme).name}</span>
           </div>
         </div>
       </div>
