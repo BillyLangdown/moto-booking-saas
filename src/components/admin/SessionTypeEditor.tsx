@@ -58,7 +58,7 @@ export default function SessionTypeEditor({ types, onChange, suggestions = [] }:
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKey}
           placeholder="Add a service…"
-          className="flex-1 border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent transition"
+          className="flex-1 border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-ink/20 transition"
         />
         <button
           type="button"

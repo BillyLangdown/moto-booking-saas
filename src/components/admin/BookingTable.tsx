@@ -8,13 +8,19 @@ interface Props {
   onSelect: (booking: Booking) => void
 }
 
-function formatSlotDate(isoDate: string) {
-  return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString('en-GB', {
-    weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
-  })
+function formatDateHeading(isoDate: string) {
+  const d = new Date(`${isoDate}T00:00:00`)
+  const today = new Date()
+  const tomorrow = new Date(today)
+  tomorrow.setDate(today.getDate() + 1)
+
+  if (d.toDateString() === today.toDateString()) return 'Today'
+  if (d.toDateString() === tomorrow.toDateString()) return 'Tomorrow'
+
+  return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
 }
 
-function formatCreated(iso: string) {
+function formatBookedOn(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
@@ -28,31 +34,69 @@ export default function BookingTable({ bookings, onSelect }: Props) {
     )
   }
 
+  // Group by slot date, fall back to createdAt date for bookings without a slot
+  const grouped = bookings.reduce<Record<string, Booking[]>>((acc, b) => {
+    const key = b.slot?.date ?? b.createdAt.split('T')[0]
+    if (!acc[key]) acc[key] = []
+    acc[key].push(b)
+    return acc
+  }, {})
+
   return (
-    <div className="bg-white shadow-sm divide-y divide-border/50">
-      {bookings.map((b) => (
-        <div
-          key={b.id}
-          onClick={() => onSelect(b)}
-          className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-subtle/60 transition-colors"
-        >
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-ink truncate">{b.name}</p>
-            <p className="text-xs text-secondary mt-0.5">
-              {b.slot?.date ? formatSlotDate(b.slot.date) : formatCreated(b.createdAt)}
-              {b.slot?.startTime ? ` · ${b.slot.startTime}–${b.slot.endTime}` : ''}
-              {b.resourceName ? ` · ${b.resourceName}` : ''}
-            </p>
+    <div className="flex flex-col gap-4">
+      {Object.entries(grouped)
+        .sort(([a], [b]) => b.localeCompare(a)) // newest first
+        .map(([date, dateBookings]) => (
+          <div key={date} className="bg-white shadow-sm overflow-hidden">
+            {/* Date heading */}
+            <div className="border-b border-border bg-subtle px-5 py-3 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
+                {formatDateHeading(date)}
+              </p>
+              <p className="text-xs text-muted">
+                {dateBookings.length} booking{dateBookings.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+
+            <ul className="divide-y divide-border/50">
+              {dateBookings.map((b) => (
+                <li
+                  key={b.id}
+                  onClick={() => onSelect(b)}
+                  className="px-5 py-4 cursor-pointer hover:bg-subtle/60 transition-colors"
+                >
+                  {/* Top row: name + status */}
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <p className="font-semibold text-sm text-ink truncate">{b.name}</p>
+                    <Badge variant="status" value={b.status} />
+                  </div>
+
+                  {/* Bottom row: time, service, resource */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {b.slot?.startTime && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-ink">
+                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden>
+                          <circle cx="5.5" cy="5.5" r="4.5" stroke="currentColor" strokeWidth="1.1"/>
+                          <path d="M5.5 3v2.5l1.5 1" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
+                        </svg>
+                        {b.slot.startTime}–{b.slot.endTime}
+                      </span>
+                    )}
+                    {b.sessionType && (
+                      <Badge variant="session" value={b.sessionType} />
+                    )}
+                    {b.resourceName && (
+                      <span className="text-xs text-secondary">{b.resourceName}</span>
+                    )}
+                    {!b.slot?.startTime && (
+                      <span className="text-xs text-muted">Booked {formatBookedOn(b.createdAt)}</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="hidden sm:block shrink-0">
-            <Badge variant="session" value={b.sessionType} />
-          </div>
-          <Badge variant="status" value={b.status} />
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0 text-muted">
-            <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-      ))}
+        ))}
     </div>
   )
 }

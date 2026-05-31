@@ -356,7 +356,7 @@ export default function SetupWizard({ tenant }: Props) {
                   Each time slot is linked to one of these, so you always know who or what is booked.
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 <input
                   type="text"
                   value={resInput}
@@ -365,12 +365,12 @@ export default function SetupWizard({ tenant }: Props) {
                   placeholder="e.g. John Smith, Bike 1, Studio A"
                   className={inputClass}
                 />
-                <select value={resType} onChange={(e) => setResType(e.target.value as 'person' | 'asset')} className="border border-border bg-white px-3 py-2.5 text-sm text-ink focus:outline-none shrink-0">
+                <select value={resType} onChange={(e) => setResType(e.target.value as 'person' | 'asset')} className="w-full border border-border bg-white px-3 py-2.5 text-sm text-ink focus:outline-none">
                   <option value="person">Person (staff)</option>
-                  <option value="asset">Asset (vehicle, room…)</option>
+                  <option value="asset">Asset (vehicle, room...)</option>
                 </select>
-                <button type="button" onClick={addResource} className="shrink-0 bg-ink text-white px-3 py-2 text-sm font-medium hover:bg-ink/85 transition-colors">
-                  Add
+                <button type="button" onClick={addResource} className="w-full bg-ink text-white px-3 py-2.5 text-sm font-medium hover:bg-ink/85 transition-colors">
+                  Add resource
                 </button>
               </div>
               {wizResources.length > 0 && (
@@ -450,10 +450,10 @@ export default function SetupWizard({ tenant }: Props) {
                     <label className="text-xs font-medium text-secondary uppercase tracking-wide">End</label>
                     <input type="time" value={availEnd} onChange={(e) => setAvailEnd(e.target.value)} className={inputClass} />
                   </div>
-                  <div className="flex flex-col gap-1.5 flex-1">
-                    <label className="text-xs font-medium text-secondary uppercase tracking-wide">Capacity</label>
-                    <input type="number" min={1} max={100} value={availCapacity} onChange={(e) => setAvailCapacity(Number(e.target.value))} className={inputClass} />
-                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-secondary uppercase tracking-wide">Capacity (spots per slot)</label>
+                  <input type="number" min={1} max={100} value={availCapacity} onChange={(e) => setAvailCapacity(Number(e.target.value))} className={inputClass} />
                 </div>
 
                 {wizResources.length > 0 && recurDates.length > 0 && (

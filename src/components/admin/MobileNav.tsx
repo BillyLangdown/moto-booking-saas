@@ -25,7 +25,7 @@ export default function MobileNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="md:hidden shrink-0 flex border-b border-white/10" style={{ background: 'linear-gradient(180deg, #0D1117 0%, #1a2644 100%)' }}>
+    <nav className="flex h-12 border-t border-white/10">
       {NAV.map(({ href, label, icon }) => {
         const active = pathname.startsWith(href)
         return (

@@ -58,9 +58,10 @@ interface Props {
   tenantId: string
   resources: Resource[]
   sessionTypes?: string[]
+  fullWidth?: boolean
 }
 
-export default function SlotCreateForm({ tenantId, resources, sessionTypes = [] }: Props) {
+export default function SlotCreateForm({ tenantId, resources, sessionTypes = [], fullWidth = false }: Props) {
   const router = useRouter()
   const [open, setOpen]     = useState(false)
   const [mode, setMode]     = useState<'once' | 'recurring'>('recurring')
@@ -132,7 +133,7 @@ export default function SlotCreateForm({ tenantId, resources, sessionTypes = [] 
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 bg-ink text-white px-4 py-2 text-sm font-medium hover:bg-ink/85 transition-colors"
+        className={`inline-flex items-center justify-center gap-2 bg-ink text-white px-4 py-2 text-sm font-medium hover:bg-ink/85 transition-colors ${fullWidth ? 'w-full' : ''}`}
       >
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden>
           <rect x="0.65" y="1.65" width="11.7" height="10.7" rx="1.35" stroke="currentColor" strokeWidth="1.3"/>
