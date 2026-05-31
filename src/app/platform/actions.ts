@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { adminSupabase } from '@/lib/supabase/admin'
 
-interface CreateSchoolInput {
+interface CreateBusinessInput {
   name: string
   slug: string
   email: string
@@ -16,8 +16,8 @@ interface CreateSchoolInput {
   adminEmail: string
 }
 
-export async function createSchoolAction(
-  input: CreateSchoolInput,
+export async function createBusinessAction(
+  input: CreateBusinessInput,
 ): Promise<{ error?: string; tenantId?: string }> {
   // 1. Create tenant
   const { data: tenant, error: tenantError } = await adminSupabase

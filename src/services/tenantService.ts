@@ -14,6 +14,7 @@ function mapTenant(row: Record<string, unknown>): Tenant {
     logoUrl:     b.logo_url ?? undefined,
     theme:       b.theme ?? undefined,
     intakeQuestions: (row.intake_questions as IntakeQuestion[]) ?? [],
+    sessionTypes: (b.session_types as unknown as string[]) ?? [],
     onboardingCompleted: (row.onboarding_completed as boolean) ?? false,
     autoConfirm: (b.auto_confirm as unknown as boolean) !== false,
     branding: {
@@ -79,6 +80,7 @@ export const tenantService = {
         logo_url:      input.logoUrl ?? null,
         theme:         input.theme ?? null,
         auto_confirm:  input.autoConfirm !== false,
+        session_types: input.sessionTypes ?? null,
       },
     }
 

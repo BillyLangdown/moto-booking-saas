@@ -25,6 +25,7 @@ export interface Tenant {
   logoUrl?: string
   theme?: string
   intakeQuestions: IntakeQuestion[]
+  sessionTypes: string[]
   onboardingCompleted: boolean
   autoConfirm: boolean
   branding: {
@@ -92,6 +93,7 @@ export interface UpdateTenantInput {
   intakeQuestions?: IntakeQuestion[]
   onboardingCompleted?: boolean
   autoConfirm?: boolean
+  sessionTypes?: string[]
   primaryColor: string
   accentColor: string
 }

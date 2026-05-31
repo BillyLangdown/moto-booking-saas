@@ -28,9 +28,9 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex flex-col items-center gap-3 mb-10">
           <div className="flex h-12 w-12 items-center justify-center bg-white/10 text-white text-xl font-bold backdrop-blur">
-            B
+            S
           </div>
-          <p className="text-sm text-white/40 tracking-widest uppercase font-medium">Booq Admin</p>
+          <p className="text-sm text-white/40 tracking-widest uppercase font-medium">Slick</p>
         </div>
 
         <div className="bg-white/5 backdrop-blur border border-white/10 p-8">

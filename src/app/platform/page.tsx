@@ -24,7 +24,7 @@ export default async function SuperAdminPage() {
       <div className="bg-white shadow-sm">
         {tenants.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-sm text-secondary">No schools yet.</p>
+            <p className="text-sm text-secondary">No businesses yet.</p>
             <Link href="/platform/new" className="mt-3 inline-block text-sm text-accent hover:underline">
               Add your first business
             </Link>

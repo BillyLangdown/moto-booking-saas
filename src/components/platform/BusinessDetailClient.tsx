@@ -13,7 +13,7 @@ interface Props {
 const TABS = ['Details', 'Resources'] as const
 type Tab = typeof TABS[number]
 
-export default function SchoolDetailClient({ tenant, resources }: Props) {
+export default function BusinessDetailClient({ tenant, resources }: Props) {
   const [tab, setTab] = useState<Tab>('Details')
 
   return (
@@ -24,7 +24,7 @@ export default function SchoolDetailClient({ tenant, resources }: Props) {
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
-        All schools
+        All businesses
       </Link>
 
       {/* Header */}

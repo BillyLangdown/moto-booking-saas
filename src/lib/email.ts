@@ -68,7 +68,7 @@ export async function sendBookingConfirmation(
 
       ${contactLines ? `
       <div style="margin-top:24px;padding:16px;background:#f8fafc;border-radius:8px;font-size:13px;color:#64748b;">
-        <p style="margin:0 0 4px;font-weight:600;color:#0f172a;">Contact the school</p>
+        <p style="margin:0 0 4px;font-weight:600;color:#0f172a;">Contact the business</p>
         <p style="margin:0;white-space:pre-line;">${contactLines}</p>
       </div>` : ''}
     </div>
@@ -85,7 +85,7 @@ Date: ${start.date}
 Time: ${start.time} – ${end.time}
 Booking ref: ${booking.id}
 
-${contactLines ? `Contact the school:\n${contactLines}` : ''}`
+${contactLines ? `Contact the business:\n${contactLines}` : ''}`
 
     await resend.emails.send({
       from: FROM,

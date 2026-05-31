@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ext = file.name.split('.').pop() ?? 'png'
-  const path = `${userData.tenant_id}/logo.${ext}`
+  const path = `${userData.tenant_id}/logo-${Date.now()}.${ext}`
   const bytes = await file.arrayBuffer()
 
   const { error } = await adminSupabase.storage

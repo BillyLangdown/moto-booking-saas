@@ -4,7 +4,7 @@ import { signOutAction } from '@/app/login/actions'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: 'Super Admin — Booq' }
+export const metadata = { title: 'Super Admin — Slick' }
 
 export default async function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   await getAuthSuperAdmin()
@@ -15,14 +15,14 @@ export default async function SuperAdminLayout({ children }: { children: React.R
         <div className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-6">
           <div className="flex items-center gap-2.5 shrink-0">
             <div className="flex h-7 w-7 items-center justify-center bg-white/10 text-white text-xs font-bold">
-              B
+              S
             </div>
             <span className="font-semibold text-sm text-white">Super Admin</span>
           </div>
 
           <nav className="flex items-center gap-4 flex-1">
             <Link href="/platform" className="text-sm text-white/60 hover:text-white transition-colors">
-              Schools
+              Businesses
             </Link>
           </nav>
 

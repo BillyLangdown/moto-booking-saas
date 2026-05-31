@@ -6,12 +6,13 @@ import type { IntakeQuestion, Tenant } from '@/types'
 import { updateTenantAction, saveIntakeQuestionsAction, completeOnboardingAction, setPasswordAction } from '@/app/actions'
 import LogoUpload from './LogoUpload'
 import IntakeBuilder from './IntakeBuilder'
+import SessionTypeEditor from './SessionTypeEditor'
 import Button from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
 interface Props { tenant: Tenant }
 
-const STEPS = ['Password', 'Business', 'Branding', 'Questions', 'Done'] as const
+const STEPS = ['Password', 'Business', 'Services', 'Branding', 'Questions', 'Done'] as const
 type Step = typeof STEPS[number]
 
 const EXAMPLE_QUESTIONS: IntakeQuestion[] = [
@@ -61,6 +62,9 @@ export default function SetupWizard({ tenant }: Props) {
   const [name, setName]           = useState(tenant.name)
   const [description, setDesc]    = useState(tenant.description)
 
+  // Services step
+  const [sessionTypes, setSessionTypes] = useState<string[]>(tenant.sessionTypes ?? [])
+
   // Branding step
   const [logoUrl, setLogoUrl] = useState(tenant.logoUrl ?? '')
 
@@ -99,19 +103,32 @@ export default function SetupWizard({ tenant }: Props) {
       await updateTenantAction(tenant.id, {
         name, description,
         email: tenant.email, phone: tenant.phone, address: tenant.address,
-        logoUrl: logoUrl || undefined,
         primaryColor: tenant.branding.primaryColor,
         accentColor:  tenant.branding.accentColor,
+        sessionTypes,
       })
       setSaving(false)
       setStep(3)
 
     } else if (step === 3) {
       setSaving(true)
+      await updateTenantAction(tenant.id, {
+        name, description,
+        email: tenant.email, phone: tenant.phone, address: tenant.address,
+        logoUrl: logoUrl || undefined,
+        primaryColor: tenant.branding.primaryColor,
+        accentColor:  tenant.branding.accentColor,
+        sessionTypes,
+      })
+      setSaving(false)
+      setStep(4)
+
+    } else if (step === 4) {
+      setSaving(true)
       const finalQ = useExamples ? EXAMPLE_QUESTIONS : questions
       await saveIntakeQuestionsAction(tenant.id, finalQ)
       setSaving(false)
-      setStep(4)
+      setStep(5)
 
     } else {
       await completeOnboardingAction(tenant.id)
@@ -129,7 +146,7 @@ export default function SetupWizard({ tenant }: Props) {
       <div style={{ background: 'linear-gradient(180deg, #0D1117 0%, #1a2644 100%)' }}>
         <div className="mx-auto max-w-xl px-4 pt-5 pb-4">
           <div className="flex items-center gap-2.5 mb-5">
-            <div className="flex h-7 w-7 items-center justify-center bg-white/10 text-white text-xs font-bold">B</div>
+            <div className="flex h-7 w-7 items-center justify-center bg-white/10 text-white text-xs font-bold">S</div>
             <span className="text-sm font-semibold text-white">Setup</span>
           </div>
           <div className="flex gap-1 mb-2">
@@ -232,8 +249,24 @@ export default function SetupWizard({ tenant }: Props) {
           </>
         )}
 
-        {/* Step 2 — Branding */}
+        {/* Step 2 — Services */}
         {step === 2 && (
+          <>
+            <div>
+              <h1 className="text-2xl font-bold text-ink">Your services</h1>
+              <p className="text-sm text-secondary mt-1">
+                Add the types of sessions or services customers can book. You can change these any time in Settings.
+              </p>
+            </div>
+            <div className="bg-white shadow-sm p-5 flex flex-col gap-3">
+              <SessionTypeEditor types={sessionTypes} onChange={setSessionTypes} />
+            </div>
+            <p className="text-xs text-secondary text-center">You can skip this and add service types later in Settings → Bookings.</p>
+          </>
+        )}
+
+        {/* Step 3 — Branding */}
+        {step === 3 && (
           <>
             <div>
               <h1 className="text-2xl font-bold text-ink">Add your logo</h1>
@@ -246,8 +279,8 @@ export default function SetupWizard({ tenant }: Props) {
           </>
         )}
 
-        {/* Step 3 — Questions */}
-        {step === 3 && (
+        {/* Step 4 — Questions */}
+        {step === 4 && (
           <>
             <div>
               <h1 className="text-2xl font-bold text-ink">Booking questions</h1>
@@ -292,8 +325,8 @@ export default function SetupWizard({ tenant }: Props) {
           </>
         )}
 
-        {/* Step 4 — Done */}
-        {step === 4 && (
+        {/* Step 5 — Done */}
+        {step === 5 && (
           <div className="flex flex-col items-center text-center gap-6 py-8">
             <div className="flex h-14 w-14 items-center justify-center bg-emerald-100">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -329,7 +362,7 @@ export default function SetupWizard({ tenant }: Props) {
       {/* Footer nav */}
       <div className="bg-white border-t border-border px-4 py-4 sticky bottom-0">
         <div className="mx-auto max-w-xl flex items-center justify-between">
-          {step > 0 && step < 4 ? (
+          {step > 0 && step < 5 ? (
             <button
               type="button"
               onClick={() => { setError(null); setStep(step - 1) }}
@@ -339,7 +372,7 @@ export default function SetupWizard({ tenant }: Props) {
             </button>
           ) : <div />}
           <Button onClick={handleNext} loading={saving}>
-            {step === 4 ? 'Go to dashboard' : step === 3 ? 'Save & finish' : 'Continue →'}
+            {step === 5 ? 'Go to dashboard' : step === 4 ? 'Save & finish' : 'Continue →'}
           </Button>
         </div>
       </div>

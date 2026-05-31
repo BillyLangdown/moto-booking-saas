@@ -24,7 +24,11 @@ export default async function BookingPage({ params }: Props) {
   const tenant = await tenantService.getTenantBySlug(slug)
   if (!tenant) notFound()
 
-  const slots = await availabilityService.getSlots(tenant.id)
+  const allSlots = await availabilityService.getSlots(tenant.id)
+  const configuredTypes = tenant.sessionTypes ?? []
+  const slots = configuredTypes.length > 0
+    ? allSlots.filter((s) => configuredTypes.includes(s.sessionType))
+    : allSlots
 
   return <BookingPageClient tenant={tenant} slots={slots} />
 }

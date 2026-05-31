@@ -21,7 +21,7 @@ export default async function AvailabilityPage() {
             {slots.length > 0 ? `${slots.length} slot${slots.length !== 1 ? 's' : ''} scheduled` : 'No slots yet — add your first below.'}
           </p>
         </div>
-        <SlotCreateForm tenantId={tenant.id} resources={resources} />
+        <SlotCreateForm tenantId={tenant.id} resources={resources} sessionTypes={tenant.sessionTypes} />
       </div>
       <AvailabilityView slots={slots} />
     </div>

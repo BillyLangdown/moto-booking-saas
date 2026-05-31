@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { createSchoolAction } from '@/app/platform/actions'
+import { createBusinessAction } from '@/app/platform/actions'
 import { Input } from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 
@@ -16,7 +16,7 @@ function slugify(s: string) {
   return s.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 }
 
-export default function NewSchoolForm() {
+export default function NewBusinessForm() {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('Business')
 
@@ -39,7 +39,7 @@ export default function NewSchoolForm() {
     e.preventDefault()
     setError(null)
     setSubmitting(true)
-    const result = await createSchoolAction({
+    const result = await createBusinessAction({
       name, slug, email, phone, address, description,
       theme: 'default',
       primaryColor: '#0f172a',

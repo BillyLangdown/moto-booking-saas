@@ -7,15 +7,16 @@ import Button from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import LogoUpload from './LogoUpload'
 import IntakeBuilder from './IntakeBuilder'
+import SessionTypeEditor from './SessionTypeEditor'
 
-interface Props { tenant: Tenant }
+interface Props { tenant: Tenant; slotSessionTypes?: string[] }
 
 const TABS = ['Business', 'Bookings', 'Branding', 'Questions'] as const
 type Tab = typeof TABS[number]
 
 const inputClass = 'w-full bg-white border border-border px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-ink/20 transition'
 
-export default function SettingsForm({ tenant }: Props) {
+export default function SettingsForm({ tenant, slotSessionTypes = [] }: Props) {
   const [tab, setTab] = useState<Tab>('Business')
 
   const [name, setName]               = useState(tenant.name)
@@ -24,8 +25,11 @@ export default function SettingsForm({ tenant }: Props) {
   const [address, setAddress]         = useState(tenant.address)
   const [description, setDescription] = useState(tenant.description)
   const [logoUrl, setLogoUrl]         = useState(tenant.logoUrl ?? '')
-  const [autoConfirm, setAutoConfirm] = useState(tenant.autoConfirm !== false)
-  const [questions, setQuestions]     = useState<IntakeQuestion[]>(tenant.intakeQuestions ?? [])
+  const [autoConfirm, setAutoConfirm]   = useState(tenant.autoConfirm !== false)
+  const [sessionTypes, setSessionTypes] = useState<string[]>(
+    tenant.sessionTypes?.length ? tenant.sessionTypes : slotSessionTypes
+  )
+  const [questions, setQuestions]       = useState<IntakeQuestion[]>(tenant.intakeQuestions ?? [])
 
   const [saving, setSaving]   = useState(false)
   const [saved, setSaved]     = useState(false)
@@ -42,6 +46,7 @@ export default function SettingsForm({ tenant }: Props) {
       primaryColor: tenant.branding.primaryColor,
       accentColor:  tenant.branding.accentColor,
       autoConfirm,
+      sessionTypes,
     }
     try {
       await updateTenantAction(tenant.id, input)
@@ -149,6 +154,16 @@ export default function SettingsForm({ tenant }: Props) {
                 <span className={['absolute top-0.5 left-0.5 h-5 w-5 bg-white shadow transition-transform', autoConfirm ? 'translate-x-5' : 'translate-x-0'].join(' ')} />
               </button>
             </label>
+          </div>
+
+          <div className="bg-white shadow-sm p-5 flex flex-col gap-3">
+            <div>
+              <p className="text-sm font-medium text-ink">Services</p>
+              <p className="text-xs text-secondary mt-0.5">
+                The services you offer. Customers can filter by these on your booking page, and they appear as options when you add availability slots.
+              </p>
+            </div>
+            <SessionTypeEditor types={sessionTypes} onChange={setSessionTypes} suggestions={slotSessionTypes} />
           </div>
 
           {error && <p className="text-sm text-rose-600 bg-rose-50 px-4 py-3">{error}</p>}

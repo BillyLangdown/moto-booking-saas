@@ -1,13 +1,13 @@
 import { notFound } from 'next/navigation'
 import { tenantService } from '@/services/tenantService'
 import { resourceService } from '@/services/resourceService'
-import SchoolDetailClient from '@/components/platform/SchoolDetailClient'
+import BusinessDetailClient from '@/components/platform/BusinessDetailClient'
 
 interface Props {
   params: Promise<{ tenantId: string }>
 }
 
-export default async function SchoolDetailPage({ params }: Props) {
+export default async function BusinessDetailPage({ params }: Props) {
   const { tenantId } = await params
 
   const [tenant, resources] = await Promise.all([
@@ -17,5 +17,5 @@ export default async function SchoolDetailPage({ params }: Props) {
 
   if (!tenant) notFound()
 
-  return <SchoolDetailClient tenant={tenant} resources={resources} />
+  return <BusinessDetailClient tenant={tenant} resources={resources} />
 }

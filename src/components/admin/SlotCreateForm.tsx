@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button'
 interface Props {
   tenantId: string
   resources: Resource[]
+  sessionTypes?: string[]
 }
 
 const tomorrow = () => {
@@ -22,7 +23,7 @@ const today = () => new Date().toISOString().split('T')[0]
 const fieldClass =
   'w-full border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent transition'
 
-export default function SlotCreateForm({ tenantId, resources }: Props) {
+export default function SlotCreateForm({ tenantId, resources, sessionTypes = [] }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -89,14 +90,28 @@ export default function SlotCreateForm({ tenantId, resources }: Props) {
         {/* Session type */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-ink uppercase tracking-wide">Session type</label>
-          <input
-            type="text"
-            value={sessionType}
-            onChange={(e) => setSessionType(e.target.value)}
-            placeholder="e.g. Beginner, Advanced, Consultation…"
-            className={fieldClass}
-            required
-          />
+          {sessionTypes.length > 0 ? (
+            <select
+              value={sessionType}
+              onChange={(e) => setSessionType(e.target.value)}
+              className={fieldClass}
+              required
+            >
+              <option value="">Select type…</option>
+              {sessionTypes.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={sessionType}
+              onChange={(e) => setSessionType(e.target.value)}
+              placeholder="e.g. Beginner, Advanced, Consultation…"
+              className={fieldClass}
+              required
+            />
+          )}
         </div>
 
         {/* Date */}
