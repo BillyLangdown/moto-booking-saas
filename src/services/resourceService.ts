@@ -2,6 +2,21 @@ import { adminSupabase as supabase } from '@/lib/supabase/admin'
 import type { Resource } from '@/types'
 
 export const resourceService = {
+  async deleteResource(resourceId: string): Promise<void> {
+    const { error } = await supabase.from('resources').delete().eq('id', resourceId)
+    if (error) throw new Error(error.message)
+  },
+
+  async createResource(tenantId: string, name: string, type: 'person' | 'asset'): Promise<{ id: string }> {
+    const { data, error } = await supabase
+      .from('resources')
+      .insert({ tenant_id: tenantId, name, type })
+      .select('id')
+      .single()
+    if (error) throw new Error(error.message)
+    return { id: (data as Record<string, unknown>).id as string }
+  },
+
   async getResources(tenantId: string): Promise<Resource[]> {
     const { data, error } = await supabase
       .from('resources')

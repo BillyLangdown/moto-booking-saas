@@ -43,7 +43,7 @@ export default function NewBusinessForm() {
       name, slug, email, phone, address, description,
       theme: 'default',
       primaryColor: '#0f172a',
-      accentColor: '#6366f1',
+      accentColor: '#0f172a',
       adminEmail,
     })
     if (result.error) {

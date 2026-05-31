@@ -92,3 +92,33 @@ export async function deleteResourceAction(
   await adminSupabase.from('resources').delete().eq('id', resourceId)
   revalidatePath(`/platform/${tenantId}`)
 }
+
+export async function deleteBusinessAction(
+  tenantId: string,
+): Promise<{ error?: string }> {
+  // Delete child records first to avoid FK constraint errors
+  await adminSupabase.from('bookings').delete().eq('tenant_id', tenantId)
+  await adminSupabase.from('availability_slots').delete().eq('tenant_id', tenantId)
+  await adminSupabase.from('resources').delete().eq('tenant_id', tenantId)
+
+  // Fetch and delete auth users linked to this tenant (never touch superadmins)
+  const { data: users } = await adminSupabase
+    .from('users')
+    .select('id, role')
+    .eq('tenant_id', tenantId)
+    .neq('role', 'superadmin')
+
+  if (users?.length) {
+    for (const u of users) {
+      await adminSupabase.auth.admin.deleteUser(u.id)
+    }
+  }
+
+  await adminSupabase.from('users').delete().eq('tenant_id', tenantId)
+
+  const { error } = await adminSupabase.from('tenants').delete().eq('id', tenantId)
+  if (error) return { error: error.message }
+
+  revalidatePath('/platform')
+  return {}
+}

@@ -6,7 +6,7 @@ export interface Theme {
 }
 
 export const THEMES: Theme[] = [
-  { id: 'slate',   name: 'Slate',   primaryColor: '#1e293b', accentColor: '#6366f1' },
+  { id: 'slate',   name: 'Slate',   primaryColor: '#1e293b', accentColor: '#1e293b' },
   { id: 'ocean',   name: 'Ocean',   primaryColor: '#0c1a2e', accentColor: '#0ea5e9' },
   { id: 'forest',  name: 'Forest',  primaryColor: '#14532d', accentColor: '#22c55e' },
   { id: 'warm',    name: 'Warm',    primaryColor: '#1c1917', accentColor: '#f97316' },

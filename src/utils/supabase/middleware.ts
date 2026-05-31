@@ -22,19 +22,8 @@ export const createClient = async (request: NextRequest) => {
     },
   })
 
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
-  const isSetup     = request.nextUrl.pathname === '/setup'
-  const isLogin     = request.nextUrl.pathname === '/login'
-
-  if ((isDashboard || isSetup) && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  if (isLogin && user) {
-    return NextResponse.redirect(new URL('/dashboard/bookings', request.url))
-  }
+  // Refresh session — must call getUser() for the cookie refresh to work
+  await supabase.auth.getUser()
 
   return supabaseResponse
 }

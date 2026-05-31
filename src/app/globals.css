@@ -7,8 +7,8 @@
   --color-border:    #e2e8f0;
   --color-secondary: #64748b;
   --color-muted:     #94a3b8;
-  --color-accent:    #6366f1;
-  --color-accent-hover: #4f46e5;
+  --color-accent:    #0f172a;
+  --color-accent-hover: #1e293b;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -25,7 +25,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 

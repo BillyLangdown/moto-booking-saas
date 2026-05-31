@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/server'
 import { bookingService } from '@/services/bookingService'
 import { availabilityService } from '@/services/availabilityService'
 import { tenantService } from '@/services/tenantService'
+import { resourceService } from '@/services/resourceService'
 import { sendBookingConfirmation, sendAdminNotification } from '@/lib/email'
 import type { Booking, CreateBookingInput, CreateSlotInput, IntakeQuestion, UpdateTenantInput } from '@/types'
 
@@ -67,6 +68,42 @@ export async function confirmBookingAction(bookingId: string): Promise<{ error?:
 export async function createSlotAction(input: CreateSlotInput): Promise<void> {
   await availabilityService.createSlot(input)
   revalidatePath('/dashboard/availability')
+}
+
+export async function createSlotsAction(inputs: CreateSlotInput[]): Promise<{ error?: string }> {
+  try {
+    await Promise.all(inputs.map((input) => availabilityService.createSlot(input)))
+    revalidatePath('/dashboard/availability')
+    return {}
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to create slots' }
+  }
+}
+
+export async function createResourceAction(
+  tenantId: string,
+  name: string,
+  type: 'person' | 'asset',
+): Promise<{ error?: string; resourceId?: string }> {
+  try {
+    const { id } = await resourceService.createResource(tenantId, name, type)
+    revalidatePath('/dashboard/availability')
+    revalidatePath('/dashboard/settings')
+    return { resourceId: id }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to create resource' }
+  }
+}
+
+export async function deleteResourceAction(resourceId: string): Promise<{ error?: string }> {
+  try {
+    await resourceService.deleteResource(resourceId)
+    revalidatePath('/dashboard/availability')
+    revalidatePath('/dashboard/settings')
+    return {}
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to delete resource' }
+  }
 }
 
 export async function deleteSlotAction(slotId: string): Promise<void> {

@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { IntakeQuestion, Tenant } from '@/types'
-import { updateTenantAction, saveIntakeQuestionsAction, completeOnboardingAction, setPasswordAction } from '@/app/actions'
+import { updateTenantAction, saveIntakeQuestionsAction, completeOnboardingAction, setPasswordAction, createResourceAction, createSlotsAction } from '@/app/actions'
+import { generateRecurringDates } from './SlotCreateForm'
+import type { CreateSlotInput } from '@/types'
 import LogoUpload from './LogoUpload'
 import IntakeBuilder from './IntakeBuilder'
 import SessionTypeEditor from './SessionTypeEditor'
@@ -12,7 +14,7 @@ import { Input } from '@/components/ui/Input'
 
 interface Props { tenant: Tenant }
 
-const STEPS = ['Password', 'Business', 'Services', 'Branding', 'Questions', 'Done'] as const
+const STEPS = ['Password', 'Business', 'Services', 'Branding', 'Availability', 'Questions', 'Done'] as const
 type Step = typeof STEPS[number]
 
 const EXAMPLE_QUESTIONS: IntakeQuestion[] = [
@@ -67,6 +69,35 @@ export default function SetupWizard({ tenant }: Props) {
 
   // Branding step
   const [logoUrl, setLogoUrl] = useState(tenant.logoUrl ?? '')
+
+  // Availability step
+  const [wizResources, setWizResources] = useState<Array<{ name: string; type: 'person' | 'asset' }>>([])
+  const [resInput, setResInput]         = useState('')
+  const [resType, setResType]           = useState<'person' | 'asset'>('person')
+  const [availMode, setAvailMode]       = useState<'once' | 'recurring'>('recurring')
+  const [availDays, setAvailDays]       = useState<number[]>([1, 2, 3, 4, 5])
+  const [availFrom, setAvailFrom]       = useState(new Date().toISOString().split('T')[0])
+  const [availUntil, setAvailUntil]     = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() + 56); return d.toISOString().split('T')[0]
+  })
+  const [availDate, setAvailDate]   = useState(new Date().toISOString().split('T')[0])
+  const [availStart, setAvailStart] = useState('09:00')
+  const [availEnd, setAvailEnd]     = useState('17:00')
+  const [availCapacity, setAvailCapacity] = useState(1)
+
+  const AVAIL_DAYS = [
+    { label: 'Mon', value: 1 }, { label: 'Tue', value: 2 }, { label: 'Wed', value: 3 },
+    { label: 'Thu', value: 4 }, { label: 'Fri', value: 5 }, { label: 'Sat', value: 6 }, { label: 'Sun', value: 0 },
+  ]
+  const recurDates = availMode === 'recurring' ? generateRecurringDates(availFrom, availUntil, availDays) : [availDate]
+  const availSlotCount = recurDates.length * Math.max(wizResources.length, 1)
+
+  function addResource() {
+    const name = resInput.trim()
+    if (!name) return
+    setWizResources((prev) => [...prev, { name, type: resType }])
+    setResInput('')
+  }
 
   // Questions step
   const [questions, setQuestions]     = useState<IntakeQuestion[]>([])
@@ -124,11 +155,40 @@ export default function SetupWizard({ tenant }: Props) {
       setStep(4)
 
     } else if (step === 4) {
+      // Create resources, then slots for each
+      setSaving(true)
+      const createdIds: string[] = []
+      for (const res of wizResources) {
+        const r = await createResourceAction(tenant.id, res.name, res.type)
+        if (r.error) { setError(r.error); setSaving(false); return }
+        createdIds.push(r.resourceId!)
+      }
+      if (createdIds.length > 0) {
+        const slotInputs: CreateSlotInput[] = createdIds.flatMap((resourceId) =>
+          recurDates.map((date) => ({
+            tenantId: tenant.id,
+            resourceId,
+            sessionType: '',
+            date,
+            startTime: availStart,
+            endTime:   availEnd,
+            capacity:  availCapacity,
+          }))
+        )
+        if (slotInputs.length > 0) {
+          const r = await createSlotsAction(slotInputs)
+          if (r.error) { setError(r.error); setSaving(false); return }
+        }
+      }
+      setSaving(false)
+      setStep(5)
+
+    } else if (step === 5) {
       setSaving(true)
       const finalQ = useExamples ? EXAMPLE_QUESTIONS : questions
       await saveIntakeQuestionsAction(tenant.id, finalQ)
       setSaving(false)
-      setStep(5)
+      setStep(6)
 
     } else {
       await completeOnboardingAction(tenant.id)
@@ -146,7 +206,7 @@ export default function SetupWizard({ tenant }: Props) {
       <div style={{ background: 'linear-gradient(180deg, #0D1117 0%, #1a2644 100%)' }}>
         <div className="mx-auto max-w-xl px-4 pt-5 pb-4">
           <div className="flex items-center gap-2.5 mb-5">
-            <div className="flex h-7 w-7 items-center justify-center bg-white/10 text-white text-xs font-bold">S</div>
+            <img src="/images/slick-logo.png" alt="Slick" className="h-7 w-auto object-contain" />
             <span className="text-sm font-semibold text-white">Setup</span>
           </div>
           <div className="flex gap-1 mb-2">
@@ -279,8 +339,140 @@ export default function SetupWizard({ tenant }: Props) {
           </>
         )}
 
-        {/* Step 4 — Questions */}
+        {/* Step 4 — Availability */}
         {step === 4 && (
+          <>
+            <div>
+              <h1 className="text-2xl font-bold text-ink">Set your availability</h1>
+              <p className="text-sm text-secondary mt-1">Add what you're scheduling and your working hours. You can change all of this later.</p>
+            </div>
+
+            {/* Resources */}
+            <div className="bg-white shadow-sm p-5 flex flex-col gap-4">
+              <div>
+                <p className="text-sm font-semibold text-ink mb-0.5">What are customers booking?</p>
+                <p className="text-xs text-secondary leading-relaxed">
+                  Add the people or things customers will be booking — for example a staff member, a vehicle, a room, or a piece of equipment.
+                  Each time slot is linked to one of these, so you always know who or what is booked.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={resInput}
+                  onChange={(e) => setResInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addResource())}
+                  placeholder="e.g. John Smith, Bike 1, Studio A"
+                  className={inputClass}
+                />
+                <select value={resType} onChange={(e) => setResType(e.target.value as 'person' | 'asset')} className="border border-border bg-white px-3 py-2.5 text-sm text-ink focus:outline-none shrink-0">
+                  <option value="person">Person (staff)</option>
+                  <option value="asset">Asset (vehicle, room…)</option>
+                </select>
+                <button type="button" onClick={addResource} className="shrink-0 bg-ink text-white px-3 py-2 text-sm font-medium hover:bg-ink/85 transition-colors">
+                  Add
+                </button>
+              </div>
+              {wizResources.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {wizResources.map((r, i) => (
+                    <span key={i} className="inline-flex items-center gap-1.5 bg-subtle border border-border px-2.5 py-1 text-xs text-ink">
+                      {r.name}
+                      <span className="text-muted">·</span>
+                      <span className="text-secondary">{r.type}</span>
+                      <button type="button" onClick={() => setWizResources((p) => p.filter((_, j) => j !== i))} className="text-secondary hover:text-rose-500 transition-colors ml-0.5">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Availability */}
+            <div className="bg-white shadow-sm flex flex-col overflow-hidden">
+              <div className="px-5 pt-5 pb-3">
+                <p className="text-sm font-semibold text-ink mb-0.5">Working hours</p>
+                <p className="text-xs text-secondary">Set the times you're available for bookings.</p>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex border-y border-border">
+                {(['recurring', 'once'] as const).map((m) => (
+                  <button key={m} type="button" onClick={() => setAvailMode(m)}
+                    className={`flex-1 py-2.5 text-sm font-medium transition-colors ${availMode === m ? 'text-ink border-b-2 border-ink -mb-px bg-white' : 'text-secondary hover:text-ink'}`}
+                  >
+                    {m === 'recurring' ? 'Recurring' : 'One-off'}
+                  </button>
+                ))}
+              </div>
+
+              <div className="px-5 py-4 flex flex-col gap-4">
+                {availMode === 'recurring' && (
+                  <>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-secondary uppercase tracking-wide">Repeat on</span>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {AVAIL_DAYS.map((d) => (
+                          <button key={d.value} type="button"
+                            onClick={() => setAvailDays((p) => p.includes(d.value) ? p.filter((x) => x !== d.value) : [...p, d.value])}
+                            className={`px-3 py-1.5 text-xs font-medium border transition-colors ${availDays.includes(d.value) ? 'bg-ink text-white border-ink' : 'bg-white text-secondary border-border hover:border-ink/30'}`}
+                          >
+                            {d.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-medium text-secondary uppercase tracking-wide">From</label>
+                        <input type="date" value={availFrom} onChange={(e) => setAvailFrom(e.target.value)} className={inputClass} />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-medium text-secondary uppercase tracking-wide">Until</label>
+                        <input type="date" value={availUntil} min={availFrom} onChange={(e) => setAvailUntil(e.target.value)} className={inputClass} />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {availMode === 'once' && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-secondary uppercase tracking-wide">Date</label>
+                    <input type="date" value={availDate} min={new Date().toISOString().split('T')[0]} onChange={(e) => setAvailDate(e.target.value)} className={inputClass} />
+                  </div>
+                )}
+
+                <div className="flex items-end gap-2">
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <label className="text-xs font-medium text-secondary uppercase tracking-wide">Start</label>
+                    <input type="time" value={availStart} onChange={(e) => setAvailStart(e.target.value)} className={inputClass} />
+                  </div>
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <label className="text-xs font-medium text-secondary uppercase tracking-wide">End</label>
+                    <input type="time" value={availEnd} onChange={(e) => setAvailEnd(e.target.value)} className={inputClass} />
+                  </div>
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <label className="text-xs font-medium text-secondary uppercase tracking-wide">Capacity</label>
+                    <input type="number" min={1} max={100} value={availCapacity} onChange={(e) => setAvailCapacity(Number(e.target.value))} className={inputClass} />
+                  </div>
+                </div>
+
+                {wizResources.length > 0 && recurDates.length > 0 && (
+                  <div className="flex items-center gap-2 bg-subtle border border-border px-3 py-2 text-xs text-secondary">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                      <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2"/>
+                      <path d="M6 4v2.5l1.5 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                    </svg>
+                    Creates {availSlotCount} slot{availSlotCount !== 1 ? 's' : ''} across {wizResources.length} resource{wizResources.length !== 1 ? 's' : ''}
+                  </div>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-secondary text-center">You can skip this and configure availability from your dashboard.</p>
+          </>
+        )}
+
+        {/* Step 5 — Questions */}
+        {step === 5 && (
           <>
             <div>
               <h1 className="text-2xl font-bold text-ink">Booking questions</h1>
@@ -325,8 +517,8 @@ export default function SetupWizard({ tenant }: Props) {
           </>
         )}
 
-        {/* Step 5 — Done */}
-        {step === 5 && (
+        {/* Step 6 — Done */}
+        {step === 6 && (
           <div className="flex flex-col items-center text-center gap-6 py-8">
             <div className="flex h-14 w-14 items-center justify-center bg-emerald-100">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -362,7 +554,7 @@ export default function SetupWizard({ tenant }: Props) {
       {/* Footer nav */}
       <div className="bg-white border-t border-border px-4 py-4 sticky bottom-0">
         <div className="mx-auto max-w-xl flex items-center justify-between">
-          {step > 0 && step < 5 ? (
+          {step > 0 && step < 6 ? (
             <button
               type="button"
               onClick={() => { setError(null); setStep(step - 1) }}
@@ -372,7 +564,7 @@ export default function SetupWizard({ tenant }: Props) {
             </button>
           ) : <div />}
           <Button onClick={handleNext} loading={saving}>
-            {step === 5 ? 'Go to dashboard' : step === 4 ? 'Save & finish' : 'Continue →'}
+            {step === 6 ? 'Go to dashboard' : step === 5 ? 'Save & finish' : 'Continue →'}
           </Button>
         </div>
       </div>

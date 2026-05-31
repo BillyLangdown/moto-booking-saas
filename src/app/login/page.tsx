@@ -1,11 +1,9 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
 import { signInAction } from './actions'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [error, setError]     = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -14,8 +12,7 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
     const result = await signInAction(new FormData(e.currentTarget))
-    if (result.error) { setError(result.error); setLoading(false) }
-    else router.push('/dashboard/bookings')
+    if (result?.error) { setError(result.error); setLoading(false) }
   }
 
   return (
@@ -27,10 +24,7 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="flex flex-col items-center gap-3 mb-10">
-          <div className="flex h-12 w-12 items-center justify-center bg-white/10 text-white text-xl font-bold backdrop-blur">
-            S
-          </div>
-          <p className="text-sm text-white/40 tracking-widest uppercase font-medium">Slick</p>
+          <img src="/images/slick-logo.png" alt="Slick" className="h-12 w-auto object-contain" />
         </div>
 
         <div className="bg-white/5 backdrop-blur border border-white/10 p-8">
@@ -74,7 +68,7 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
               className="w-full py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-50 mt-1"
-              style={{ background: 'linear-gradient(90deg, #6366f1 0%, #4f46e5 100%)' }}
+              style={{ background: 'linear-gradient(180deg, #0D1117 0%, #1a2644 100%)' }}
             >
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
