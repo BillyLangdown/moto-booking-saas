@@ -1,34 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  /* SaaS shell palette */
-  --color-ink: #0f172a;
-  --color-surface: #ffffff;
-  --color-subtle: #f8fafc;
-  --color-border: #e2e8f0;
+  --color-ink:       #0f172a;
+  --color-surface:   #ffffff;
+  --color-subtle:    #f1f5f9;
+  --color-border:    #e2e8f0;
   --color-secondary: #64748b;
-  --color-muted: #94a3b8;
-
-  /* Tenant accent — overridden per booking page via inline CSS vars */
-  --color-accent: #f97316;
-  --color-accent-hover: #ea6c0a;
+  --color-muted:     #94a3b8;
+  --color-accent:    #6366f1;
+  --color-accent-hover: #4f46e5;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  background-color: var(--color-subtle);
+  background: linear-gradient(135deg, #eef2f7 0%, #e8edf5 100%);
+  background-attachment: fixed;
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
 }
 
 :focus-visible {
@@ -36,11 +29,6 @@ body {
   outline-offset: 2px;
 }
 
-/* Prevent iOS Safari from zooming on input focus — requires font-size >= 16px */
 @media (max-width: 768px) {
-  input,
-  select,
-  textarea {
-    font-size: 16px;
-  }
+  input, select, textarea { font-size: 16px; }
 }

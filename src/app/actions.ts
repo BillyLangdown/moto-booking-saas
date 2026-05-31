@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { createClient } from '@/utils/supabase/server'
 import { bookingService } from '@/services/bookingService'
 import { availabilityService } from '@/services/availabilityService'
 import { tenantService } from '@/services/tenantService'
@@ -30,6 +31,16 @@ export async function createBookingAction(
     return { booking }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Failed to create booking' }
+  }
+}
+
+export async function cancelBookingAction(bookingId: string): Promise<{ error?: string }> {
+  try {
+    await bookingService.cancelBooking(bookingId)
+    revalidatePath('/dashboard/bookings')
+    return {}
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to cancel booking' }
   }
 }
 
@@ -86,4 +97,11 @@ export async function saveIntakeQuestionsAction(
 
 export async function completeOnboardingAction(tenantId: string): Promise<void> {
   await tenantService.completeOnboarding(tenantId)
+}
+
+export async function setPasswordAction(password: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) return { error: error.message }
+  return {}
 }

@@ -13,7 +13,7 @@ export default function SlotCard({ slot, onSelect }: Props) {
   return (
     <button
       onClick={() => onSelect(slot)}
-      className="w-full text-left rounded-xl border border-border bg-white px-4 py-4 hover:border-accent hover:shadow-sm transition-all duration-150 group"
+      className="w-full text-left bg-white shadow-sm px-4 py-4 hover:shadow transition-all duration-150 group"
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-1.5 min-w-0">

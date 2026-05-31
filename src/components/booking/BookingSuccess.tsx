@@ -10,9 +10,9 @@ interface Props {
 export default function BookingSuccess({ booking, onBookAnother }: Props) {
   return (
     <div className="flex flex-col items-center text-center gap-6 py-8">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+      <div className="flex h-14 w-14 items-center justify-center bg-emerald-100">
         <svg
-          className="h-7 w-7 text-green-600"
+          className="h-7 w-7 text-emerald-600"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -30,7 +30,7 @@ export default function BookingSuccess({ booking, onBookAnother }: Props) {
         </p>
       </div>
 
-      <div className="w-full rounded-xl border border-border bg-subtle p-4 text-left flex flex-col gap-2">
+      <div className="w-full bg-white shadow-sm p-4 text-left flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-xs text-secondary">Booking ref</span>
           <span className="text-xs font-mono text-ink">{booking.id}</span>

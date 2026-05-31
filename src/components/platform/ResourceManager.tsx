@@ -10,7 +10,7 @@ interface Props {
   resources: Resource[]
 }
 
-const inputClass = 'rounded-md border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent transition'
+const inputClass = 'border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent transition'
 
 export default function ResourceManager({ tenantId, resources }: Props) {
   const router = useRouter()
@@ -87,7 +87,7 @@ export default function ResourceManager({ tenantId, resources }: Props) {
           <button
             onClick={handleAdd}
             disabled={!name.trim()}
-            className="rounded-md bg-accent text-white px-3 py-2 text-sm font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-accent text-white px-3 py-2 text-sm font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Add
           </button>

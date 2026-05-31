@@ -10,8 +10,8 @@ const FROM = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'
 function formatISODate(iso: string) {
   const d = new Date(iso)
   return {
-    date: d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
-    time: d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }),
+    date: d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }),
+    time: d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }),
   }
 }
 
@@ -111,6 +111,8 @@ export async function sendAdminNotification(
     const start = formatISODate(startTime)
     const end   = formatISODate(endTime)
     const accentColor = tenant.branding?.accentColor ?? '#6366f1'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+      ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
     const intakeRows = booking.intakeAnswers && Object.keys(booking.intakeAnswers).length > 0
       ? Object.entries(booking.intakeAnswers).map(([q, a]) => `
@@ -176,6 +178,10 @@ export async function sendAdminNotification(
         <p style="margin:0 0 4px;font-weight:600;color:#0f172a;">Customer notes</p>
         <p style="margin:0;">${booking.notes}</p>
       </div>` : ''}
+
+      <div style="margin-top:28px;">
+        <a href="${appUrl}/dashboard/bookings" style="display:inline-block;padding:12px 24px;background:${accentColor};color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">View in dashboard →</a>
+      </div>
     </div>
   </div>
 </body>

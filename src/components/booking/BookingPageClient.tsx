@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import type { AvailabilitySlot, Booking, Tenant } from '@/types'
-import { getTheme } from '@/lib/themes'
 import SlotView from '@/components/booking/SlotView'
 import BookingForm from '@/components/booking/BookingForm'
 import BookingSuccess from '@/components/booking/BookingSuccess'
@@ -29,37 +28,27 @@ export default function BookingPageClient({ tenant, slots }: Props) {
     setView('success')
   }
 
-  const theme = getTheme(tenant.theme)
-  const primary = theme.primaryColor
-  const accent  = theme.accentColor
-
   return (
-    <div
-      className="min-h-screen bg-slate-50"
-      style={{ '--color-accent': accent, '--color-accent-hover': accent } as React.CSSProperties}
-    >
+    <div className="min-h-dvh flex flex-col">
       {/* Header */}
-      <header style={{ backgroundColor: primary }}>
+      <header style={{ background: 'linear-gradient(180deg, #0D1117 0%, #1a2644 100%)' }}>
         <div className="mx-auto max-w-2xl px-4 py-5 flex items-center gap-4">
           {tenant.logoUrl ? (
-            <img src={tenant.logoUrl} alt={tenant.name} className="h-10 w-auto max-w-[120px] object-contain rounded" />
+            <img src={tenant.logoUrl} alt={tenant.name} className="h-10 w-auto max-w-[120px] object-contain" />
           ) : (
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-white font-bold text-lg shrink-0"
-              style={{ backgroundColor: accent }}
-            >
+            <div className="flex h-10 w-10 items-center justify-center bg-white/10 text-white font-bold text-lg shrink-0">
               {tenant.name.charAt(0)}
             </div>
           )}
           <div>
             <p className="font-bold text-white text-base leading-tight">{tenant.name}</p>
-            {tenant.address && <p className="text-sm text-white/70 mt-0.5">{tenant.address}</p>}
+            {tenant.address && <p className="text-sm text-white/50 mt-0.5">{tenant.address}</p>}
           </div>
         </div>
       </header>
 
       {/* Content */}
-      <main className="mx-auto max-w-2xl px-4 py-8">
+      <main className="mx-auto w-full max-w-2xl px-4 py-8 flex-1">
         {view === 'slots' && (
           <>
             <div className="mb-6">

@@ -23,7 +23,7 @@ function IntakeField({
   value: string
   onChange: (v: string) => void
 }) {
-  const inputClass = 'w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent transition'
+  const inputClass = 'w-full border border-border bg-white px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent transition'
 
   if (question.type === 'dropdown') {
     return (
@@ -55,7 +55,7 @@ function IntakeField({
               key={opt}
               type="button"
               onClick={() => onChange(opt.toLowerCase())}
-              className={`flex-1 rounded-lg border-2 py-2.5 text-sm font-medium transition-all ${
+              className={`flex-1 border-2 py-2.5 text-sm font-medium transition-all ${
                 value === opt.toLowerCase()
                   ? 'border-accent bg-accent/5 text-accent'
                   : 'border-border text-secondary hover:border-secondary'
@@ -126,9 +126,12 @@ export default function BookingForm({ slot, tenantId, intakeQuestions, onBack, o
       email:         email.trim().toLowerCase(),
       phone:         phone.trim() || undefined,
       licenceType:   slot.licenceType,
-      intakeAnswers: answers,
-      startTime:     new Date(`${slot.date}T${slot.startTime}:00`).toISOString(),
-      endTime:       new Date(`${slot.date}T${slot.endTime}:00`).toISOString(),
+      intakeAnswers: Object.fromEntries(
+        intakeQuestions.map(q => [q.label, answers[q.id] ?? ''])
+          .filter(([, v]) => v !== '')
+      ),
+      startTime:     `${slot.date}T${slot.startTime}:00.000Z`,
+      endTime:       `${slot.date}T${slot.endTime}:00.000Z`,
     }
     const result = await createBookingAction(input)
     if (result.error) {
@@ -151,7 +154,7 @@ export default function BookingForm({ slot, tenantId, intakeQuestions, onBack, o
       </button>
 
       {/* Selected slot */}
-      <div className="rounded-xl border border-border bg-subtle p-4">
+      <div className="bg-white shadow-sm p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-secondary mb-2">Your session</p>
         <p className="text-base font-semibold text-ink">{slotDate}</p>
         <p className="text-sm text-secondary mt-0.5">{slot.startTime} – {slot.endTime} · {slot.resource.name}</p>
@@ -206,7 +209,7 @@ export default function BookingForm({ slot, tenantId, intakeQuestions, onBack, o
         </div>
 
         {serverError && (
-          <p className="rounded-lg bg-rose-50 border border-rose-100 px-3 py-2.5 text-sm text-rose-700">
+          <p className="bg-rose-50 border border-rose-100 px-3 py-2.5 text-sm text-rose-700">
             {serverError}
           </p>
         )}

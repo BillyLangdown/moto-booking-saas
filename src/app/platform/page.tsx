@@ -15,13 +15,13 @@ export default async function SuperAdminPage() {
         </div>
         <Link
           href="/platform/new"
-          className="inline-flex items-center gap-1.5 rounded-md bg-accent text-white px-3 py-1.5 text-sm font-medium hover:bg-accent-hover transition-colors"
+          className="inline-flex items-center gap-1.5 bg-ink text-white px-3 py-1.5 text-sm font-medium hover:bg-ink/80 transition-colors"
         >
           + Add school
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-white">
+      <div className="bg-white shadow-sm">
         {tenants.length === 0 ? (
           <div className="py-16 text-center">
             <p className="text-sm text-secondary">No schools yet.</p>
@@ -30,15 +30,12 @@ export default async function SuperAdminPage() {
             </Link>
           </div>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-border/50">
             {tenants.map((t) => (
               <li key={t.id} className="relative group hover:bg-subtle transition-colors">
                 <Link href={`/platform/${t.id}`} className="absolute inset-0" aria-label={t.name} />
                 <div className="relative flex items-center gap-4 px-5 py-4">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-white text-sm font-bold shrink-0"
-                    style={{ backgroundColor: t.branding.primaryColor }}
-                  >
+                  <div className="flex h-9 w-9 items-center justify-center bg-ink/10 text-ink text-sm font-bold shrink-0">
                     {t.name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">

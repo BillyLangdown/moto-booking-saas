@@ -26,9 +26,5 @@ export default async function BookingPage({ params }: Props) {
 
   const slots = await availabilityService.getSlots(tenant.id)
 
-  return (
-    <div className="min-h-screen bg-subtle">
-      <BookingPageClient tenant={tenant} slots={slots} />
-    </div>
-  )
+  return <BookingPageClient tenant={tenant} slots={slots} />
 }

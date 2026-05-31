@@ -14,46 +14,45 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
     const result = await signInAction(new FormData(e.currentTarget))
-    if (result.error) {
-      setError(result.error)
-      setLoading(false)
-    } else {
-      router.push('/dashboard/bookings')
-    }
+    if (result.error) { setError(result.error); setLoading(false) }
+    else router.push('/dashboard/bookings')
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+    <div
+      className="min-h-[100dvh] flex items-center justify-center p-4"
+      style={{ background: 'linear-gradient(135deg, #0D1117 0%, #1a2644 50%, #0f1f3d 100%)' }}
+    >
       <div className="w-full max-w-sm">
 
-        {/* Wordmark */}
-        <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink text-white text-base font-bold shadow-sm">
+        {/* Logo */}
+        <div className="flex flex-col items-center gap-3 mb-10">
+          <div className="flex h-12 w-12 items-center justify-center bg-white/10 text-white text-xl font-bold backdrop-blur">
             B
           </div>
-          <p className="text-sm text-secondary font-medium">Admin portal</p>
+          <p className="text-sm text-white/40 tracking-widest uppercase font-medium">Booq Admin</p>
         </div>
 
-        <div className="rounded-2xl border border-border bg-white px-6 py-7 shadow-sm">
-          <h1 className="text-xl font-semibold text-ink mb-1">Sign in</h1>
-          <p className="text-sm text-secondary mb-6">Enter your credentials to access the dashboard.</p>
+        <div className="bg-white/5 backdrop-blur border border-white/10 p-8">
+          <h1 className="text-lg font-semibold text-white mb-1">Sign in</h1>
+          <p className="text-sm text-white/40 mb-7">Access your booking dashboard.</p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-secondary">
-                Email address
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
+                Email
               </label>
               <input
                 name="email"
                 type="email"
                 required
                 autoComplete="email"
-                className="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition"
+                className="w-full bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition"
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-secondary">
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
                 Password
               </label>
               <input
@@ -61,20 +60,21 @@ export default function LoginPage() {
                 type="password"
                 required
                 autoComplete="current-password"
-                className="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition"
+                className="w-full bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition"
               />
             </div>
 
             {error && (
-              <div className="rounded-lg bg-rose-50 border border-rose-100 px-3 py-2.5">
-                <p className="text-sm text-rose-700">{error}</p>
-              </div>
+              <p className="text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 px-4 py-3">
+                {error}
+              </p>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-ink text-white py-2.5 text-sm font-semibold hover:bg-ink/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1"
+              className="w-full py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-50 mt-1"
+              style={{ background: 'linear-gradient(90deg, #6366f1 0%, #4f46e5 100%)' }}
             >
               {loading ? 'Signing in…' : 'Sign in'}
             </button>

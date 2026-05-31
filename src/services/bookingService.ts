@@ -49,7 +49,26 @@ export const bookingService = {
 
     if (error) { console.error('[bookings] getBookings error:', error.message); return [] }
     if (!data) return []
-    return (data as Record<string, unknown>[]).map(mapBooking)
+
+    const rows = data as Record<string, unknown>[]
+    const resourceIds = [...new Set(rows.map(r => r.resource_id as string).filter(Boolean))]
+    let resourceMap = new Map<string, string>()
+    if (resourceIds.length > 0) {
+      const { data: resources } = await supabase
+        .from('resources')
+        .select('id, name')
+        .in('id', resourceIds)
+      if (resources) {
+        resourceMap = new Map((resources as { id: string; name: string }[]).map(r => [r.id, r.name]))
+      }
+    }
+
+    return rows.map(row => {
+      const booking = mapBooking(row)
+      const rid = row.resource_id as string | null
+      if (rid) booking.resourceName = resourceMap.get(rid)
+      return booking
+    })
   },
 
   async getBookingById(id: string): Promise<Booking | null> {
@@ -85,6 +104,14 @@ export const bookingService = {
 
     if (error || !data) throw new Error(error?.message ?? 'Failed to create booking')
     return mapBooking(data as Record<string, unknown>)
+  },
+
+  async cancelBooking(bookingId: string): Promise<void> {
+    const { error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', bookingId)
+    if (error) throw new Error(error.message)
   },
 
   async confirmBooking(bookingId: string): Promise<Booking> {

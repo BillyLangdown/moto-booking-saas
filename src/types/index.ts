@@ -68,6 +68,7 @@ export interface Booking {
   status: BookingStatus
   startTimeIso?: string
   endTimeIso?: string
+  resourceName?: string
 }
 
 export interface CreateSlotInput {

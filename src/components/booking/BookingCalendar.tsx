@@ -117,24 +117,20 @@ export default function BookingCalendar({ slots, onSelect }: Props) {
                 aria-label={iso}
                 aria-pressed={isSelected}
                 className={[
-                  'flex h-11 w-11 items-center justify-center rounded-full text-sm font-medium transition-all',
-                  // Selected
+                  'relative flex h-11 w-11 items-center justify-center rounded-full text-sm font-medium transition-all',
                   isSelected
                     ? 'bg-accent text-white shadow-sm scale-105'
-                    // Bookable
                     : canBook
                     ? 'bg-accent/15 text-accent font-semibold hover:bg-accent/30 active:scale-95'
-                    // Today but no slots
-                    : isToday
-                    ? 'ring-2 ring-border text-ink'
-                    // Past
                     : isPast
                     ? 'text-muted cursor-default'
-                    // Future, no slots
                     : 'text-secondary/50 cursor-default',
                 ].join(' ')}
               >
                 {parseInt(iso.slice(-2))}
+                {isToday && (
+                  <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-accent" />
+                )}
               </button>
             </div>
           )
@@ -151,6 +147,13 @@ export default function BookingCalendar({ slots, onSelect }: Props) {
           <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent text-white text-[10px] font-bold">1</span>
           Selected
         </span>
+        <span className="flex items-center gap-1.5">
+  <span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px]">
+    <span className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-accent" />
+  </span>
+
+  <span>Today</span>
+</span>
       </div>
 
       {/* Slots for selected date */}
