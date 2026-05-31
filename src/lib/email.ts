@@ -32,7 +32,7 @@ export async function sendBookingConfirmation(
     tenant.phone && `Phone: ${tenant.phone}`,
   ].filter(Boolean).join('\n')
 
-  const accentColor = tenant.branding?.accentColor ?? '#6366f1'
+  const accentColor = tenant.branding?.accentColor ?? '#0f172a'
 
   const html = `
 <!DOCTYPE html>
@@ -110,7 +110,7 @@ export async function sendAdminNotification(
 
     const start = formatISODate(startTime)
     const end   = formatISODate(endTime)
-    const accentColor = tenant.branding?.accentColor ?? '#6366f1'
+    const accentColor = tenant.branding?.accentColor ?? '#0f172a'
     const appUrl = process.env.NEXT_PUBLIC_APP_URL
       ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 

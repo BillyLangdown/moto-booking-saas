@@ -1,22 +1,22 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import type { IntakeQuestion, Tenant, UpdateTenantInput } from '@/types'
-import { updateTenantAction, saveIntakeQuestionsAction } from '@/app/actions'
+import type { IntakeQuestion, Resource, Tenant, UpdateTenantInput } from '@/types'
+import { updateTenantAction, saveIntakeQuestionsAction, createResourceAction, deleteResourceAction } from '@/app/actions'
 import Button from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import LogoUpload from './LogoUpload'
 import IntakeBuilder from './IntakeBuilder'
 import SessionTypeEditor from './SessionTypeEditor'
 
-interface Props { tenant: Tenant; slotSessionTypes?: string[] }
+interface Props { tenant: Tenant; slotSessionTypes?: string[]; resources?: Resource[] }
 
-const TABS = ['Business', 'Bookings', 'Branding', 'Questions'] as const
+const TABS = ['Business', 'Bookings', 'Services', 'Resources', 'Branding', 'Questions'] as const
 type Tab = typeof TABS[number]
 
 const inputClass = 'w-full bg-white border border-border px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-ink/20 transition'
 
-export default function SettingsForm({ tenant, slotSessionTypes = [] }: Props) {
+export default function SettingsForm({ tenant, slotSessionTypes = [], resources: initialResources = [] }: Props) {
   const [tab, setTab] = useState<Tab>('Business')
 
   const [name, setName]               = useState(tenant.name)
@@ -36,6 +36,30 @@ export default function SettingsForm({ tenant, slotSessionTypes = [] }: Props) {
   const [savingQ, setSavingQ] = useState(false)
   const [savedQ, setSavedQ]   = useState(false)
   const [error, setError]     = useState<string | null>(null)
+
+  // Resources tab
+  const [resources, setResources]   = useState<Resource[]>(initialResources)
+  const [resName, setResName]       = useState('')
+  const [resType, setResType]       = useState<'person' | 'asset'>('person')
+  const [resAdding, setResAdding]   = useState(false)
+  const [resError, setResError]     = useState<string | null>(null)
+
+  async function handleAddResource() {
+    const name = resName.trim()
+    if (!name) return
+    setResAdding(true); setResError(null)
+    const result = await createResourceAction(tenant.id, name, resType)
+    setResAdding(false)
+    if (result.error) { setResError(result.error); return }
+    setResources((prev) => [...prev, { id: result.resourceId!, tenantId: tenant.id, name, type: resType }])
+    setResName('')
+  }
+
+  async function handleDeleteResource(id: string) {
+    const result = await deleteResourceAction(id)
+    if (result.error) { setResError(result.error); return }
+    setResources((prev) => prev.filter((r) => r.id !== id))
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -156,6 +180,17 @@ export default function SettingsForm({ tenant, slotSessionTypes = [] }: Props) {
             </label>
           </div>
 
+          {error && <p className="text-sm text-rose-600 bg-rose-50 px-4 py-3">{error}</p>}
+          <div className="flex items-center gap-3">
+            <Button type="submit" loading={saving}>Save changes</Button>
+            {saved && <span className="text-sm text-green-600 font-medium">Saved ✓</span>}
+          </div>
+        </form>
+      )}
+
+      {/* Services */}
+      {tab === 'Services' && (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="bg-white shadow-sm p-5 flex flex-col gap-3">
             <div>
               <p className="text-sm font-medium text-ink">Services</p>
@@ -165,13 +200,100 @@ export default function SettingsForm({ tenant, slotSessionTypes = [] }: Props) {
             </div>
             <SessionTypeEditor types={sessionTypes} onChange={setSessionTypes} suggestions={slotSessionTypes} />
           </div>
-
           {error && <p className="text-sm text-rose-600 bg-rose-50 px-4 py-3">{error}</p>}
           <div className="flex items-center gap-3">
             <Button type="submit" loading={saving}>Save changes</Button>
             {saved && <span className="text-sm text-green-600 font-medium">Saved ✓</span>}
           </div>
         </form>
+      )}
+
+      {/* Resources */}
+      {tab === 'Resources' && (
+        <div className="flex flex-col gap-4">
+          <div className="bg-white shadow-sm p-5 flex flex-col gap-4">
+            <div>
+              <p className="text-sm font-medium text-ink">What are your resources?</p>
+              <p className="text-xs text-secondary mt-0.5">
+                The people or things customers book — a staff member, vehicle, room, or equipment. Each slot is linked to one resource.
+              </p>
+            </div>
+
+            {/* Add form */}
+            <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+              <input
+                type="text"
+                value={resName}
+                onChange={(e) => setResName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddResource())}
+                placeholder="e.g. John Smith, Bike 1, Treatment Room"
+                className={`${inputClass} flex-1`}
+              />
+              <select
+                value={resType}
+                onChange={(e) => setResType(e.target.value as 'person' | 'asset')}
+                className="border border-border bg-white px-3 py-2.5 text-sm text-ink focus:outline-none shrink-0"
+              >
+                <option value="person">Person</option>
+                <option value="asset">Asset</option>
+              </select>
+              <button
+                type="button"
+                onClick={handleAddResource}
+                disabled={resAdding || !resName.trim()}
+                className="shrink-0 bg-ink text-white px-4 py-2.5 text-sm font-medium hover:bg-ink/85 transition-colors disabled:opacity-50"
+              >
+                {resAdding ? 'Adding…' : 'Add'}
+              </button>
+            </div>
+
+            {/* List */}
+            {resources.length > 0 ? (
+              <ul className="flex flex-col divide-y divide-border/50">
+                {resources.map((r) => (
+                  <li key={r.id} className="flex items-center justify-between py-3 gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-6 h-6 flex items-center justify-center shrink-0 ${r.type === 'person' ? 'bg-ink/8' : 'bg-ink/5'}`}>
+                        {r.type === 'person' ? (
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                            <circle cx="6" cy="4" r="2.5" stroke="currentColor" strokeWidth="1.2"/>
+                            <path d="M1.5 10.5c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                          </svg>
+                        ) : (
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                            <rect x="1" y="3.5" width="10" height="6" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+                            <path d="M4 3.5V2.5a1 1 0 011-1h2a1 1 0 011 1v1" stroke="currentColor" strokeWidth="1.2"/>
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-ink">{r.name}</span>
+                        <span className="text-xs text-secondary ml-2">{r.type === 'person' ? 'Person' : 'Asset'}</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteResource(r.id)}
+                      className="text-xs text-secondary hover:text-rose-500 transition-colors shrink-0"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-secondary text-center py-6 border border-dashed border-border">
+                No resources yet — add your first one above.
+              </p>
+            )}
+
+            {resError && <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2">{resError}</p>}
+          </div>
+
+          <p className="text-xs text-secondary">
+            Tip: if you have multiple staff or vehicles, add one resource per person or item so bookings can be spread across them.
+          </p>
+        </div>
       )}
 
       {/* Branding */}
