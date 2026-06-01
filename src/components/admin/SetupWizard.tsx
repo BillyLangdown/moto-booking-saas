@@ -12,7 +12,7 @@ import SessionTypeEditor from './SessionTypeEditor'
 import Button from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
-interface Props { tenant: Tenant }
+interface Props { tenant: Tenant; userEmail?: string }
 
 const STEPS = ['Password', 'Business', 'Services', 'Branding', 'Availability', 'Questions', 'Done'] as const
 type Step = typeof STEPS[number]
@@ -49,7 +49,7 @@ function RuleRow({ met, label }: { met: boolean; label: string }) {
 
 const inputClass = 'w-full border border-border bg-white px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 transition'
 
-export default function SetupWizard({ tenant }: Props) {
+export default function SetupWizard({ tenant, userEmail = '' }: Props) {
   const router   = useRouter()
   const [step, setStep]     = useState(0)
   const [saving, setSaving] = useState(false)
@@ -62,6 +62,7 @@ export default function SetupWizard({ tenant }: Props) {
 
   // Business step
   const [name, setName]           = useState(tenant.name)
+  const [email, setEmail]         = useState(tenant.email || userEmail)
   const [description, setDesc]    = useState(tenant.description)
 
   // Services step
@@ -122,7 +123,7 @@ export default function SetupWizard({ tenant }: Props) {
       setSaving(true)
       await updateTenantAction(tenant.id, {
         name, description,
-        email: tenant.email, phone: tenant.phone, address: tenant.address,
+        email, phone: tenant.phone, address: tenant.address,
         primaryColor: tenant.branding.primaryColor,
         accentColor:  tenant.branding.accentColor,
       })
@@ -133,7 +134,7 @@ export default function SetupWizard({ tenant }: Props) {
       setSaving(true)
       await updateTenantAction(tenant.id, {
         name, description,
-        email: tenant.email, phone: tenant.phone, address: tenant.address,
+        email, phone: tenant.phone, address: tenant.address,
         primaryColor: tenant.branding.primaryColor,
         accentColor:  tenant.branding.accentColor,
         sessionTypes,
@@ -145,7 +146,7 @@ export default function SetupWizard({ tenant }: Props) {
       setSaving(true)
       await updateTenantAction(tenant.id, {
         name, description,
-        email: tenant.email, phone: tenant.phone, address: tenant.address,
+        email, phone: tenant.phone, address: tenant.address,
         logoUrl: logoUrl || undefined,
         primaryColor: tenant.branding.primaryColor,
         accentColor:  tenant.branding.accentColor,
@@ -292,6 +293,15 @@ export default function SetupWizard({ tenant }: Props) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+              />
+              <Input
+                label="Contact email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                placeholder="bookings@yourbusiness.com"
               />
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wide text-secondary">
