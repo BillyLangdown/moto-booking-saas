@@ -114,6 +114,7 @@ export async function sendAdminNotification(
     const appUrl = process.env.NEXT_PUBLIC_APP_URL
       ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
+    const isPending = booking.status === 'pending'
     const intakeRows = booking.intakeAnswers && Object.keys(booking.intakeAnswers).length > 0
       ? Object.entries(booking.intakeAnswers).map(([q, a]) => `
         <tr style="border-bottom:1px solid #e2e8f0;">
@@ -121,6 +122,19 @@ export async function sendAdminNotification(
           <td style="padding:10px 0;font-weight:500;">${a}</td>
         </tr>`).join('')
       : ''
+
+    const statusBadge = isPending
+      ? '<span style="display:inline-block;padding:2px 10px;background:#fef9c3;color:#854d0e;border-radius:999px;font-size:12px;font-weight:600;">Pending review</span>'
+      : '<span style="display:inline-block;padding:2px 10px;background:#dcfce7;color:#166534;border-radius:999px;font-size:12px;font-weight:600;">Confirmed</span>'
+
+    const actionButtons = isPending ? `
+      <div style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="${appUrl}/api/booking/${booking.id}/confirm" style="display:inline-block;padding:12px 24px;background:#16a34a;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;">Confirm booking ✓</a>
+        <a href="${appUrl}/api/booking/${booking.id}/deny" style="display:inline-block;padding:12px 24px;background:#ffffff;color:#dc2626;text-decoration:none;border:1px solid #dc2626;font-size:14px;font-weight:600;">Deny booking ✗</a>
+      </div>` : `
+      <div style="margin-top:28px;">
+        <a href="${appUrl}/dashboard/bookings" style="display:inline-block;padding:12px 24px;background:${accentColor};color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;">View in dashboard →</a>
+      </div>`
 
     const html = `
 <!DOCTYPE html>
@@ -130,11 +144,11 @@ export async function sendAdminNotification(
   <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
     <div style="background:${accentColor};padding:24px 28px;">
       <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">${tenant.name}</p>
-      <p style="margin:4px 0 0;font-size:14px;color:rgba(255,255,255,0.8);">New booking received</p>
+      <p style="margin:4px 0 0;font-size:14px;color:rgba(255,255,255,0.8);">${isPending ? 'New booking request' : 'New booking received'}</p>
     </div>
     <div style="padding:28px;">
-      <h1 style="margin:0 0 8px;font-size:20px;font-weight:600;">New booking — ${booking.sessionType}</h1>
-      <p style="margin:0 0 24px;color:#64748b;font-size:15px;">A customer has just booked a session.</p>
+      <h1 style="margin:0 0 8px;font-size:20px;font-weight:600;">${isPending ? 'Booking request — ' : 'New booking — '}${booking.sessionType}</h1>
+      <p style="margin:0 0 24px;color:#64748b;font-size:15px;">${isPending ? 'A customer is requesting a session. Confirm or deny below.' : 'A customer has just booked a session.'}</p>
 
       <table style="width:100%;border-collapse:collapse;font-size:14px;">
         <tr style="border-bottom:1px solid #e2e8f0;">
@@ -164,7 +178,7 @@ export async function sendAdminNotification(
         </tr>
         <tr style="border-bottom:1px solid #e2e8f0;">
           <td style="padding:10px 0;color:#64748b;">Status</td>
-          <td style="padding:10px 0;"><span style="display:inline-block;padding:2px 10px;background:#dcfce7;color:#166534;border-radius:999px;font-size:12px;font-weight:600;">Confirmed</span></td>
+          <td style="padding:10px 0;">${statusBadge}</td>
         </tr>
         <tr style="border-bottom:1px solid #e2e8f0;">
           <td style="padding:10px 0;color:#64748b;">Booking ref</td>
@@ -179,33 +193,117 @@ export async function sendAdminNotification(
         <p style="margin:0;">${booking.notes}</p>
       </div>` : ''}
 
-      <div style="margin-top:28px;">
-        <a href="${appUrl}/dashboard/bookings" style="display:inline-block;padding:12px 24px;background:${accentColor};color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">View in dashboard →</a>
-      </div>
+      ${actionButtons}
     </div>
   </div>
 </body>
 </html>`
 
-    const text = `New booking — ${booking.sessionType}
+    const text = `${isPending ? 'Booking request' : 'New booking'} — ${booking.sessionType}
 
 Customer: ${booking.name}
 Email: ${booking.email}
 ${booking.phone ? `Phone: ${booking.phone}\n` : ''}Session type: ${booking.sessionType}
 Date: ${start.date}
 Time: ${start.time} – ${end.time}
-Status: Confirmed
+Status: ${isPending ? 'Pending review' : 'Confirmed'}
 Booking ref: ${booking.id}
-${booking.notes ? `\nNotes: ${booking.notes}` : ''}`
+${booking.notes ? `\nNotes: ${booking.notes}` : ''}
+${isPending ? `\nConfirm: ${appUrl}/api/booking/${booking.id}/confirm\nDeny: ${appUrl}/api/booking/${booking.id}/deny` : ''}`
 
     await resend.emails.send({
       from: FROM,
       to: tenant.email,
-      subject: `New booking — ${booking.name} (${booking.sessionType})`,
+      subject: isPending
+        ? `Booking request — ${booking.name} (${booking.sessionType})`
+        : `New booking — ${booking.name} (${booking.sessionType})`,
       html,
       text,
     })
   } catch (err) {
     console.error('[email] Failed to send admin notification:', err)
+  }
+}
+
+export async function sendBookingDeclined(
+  booking: Booking,
+  startTime: string,
+  endTime: string,
+  tenant: Tenant,
+): Promise<void> {
+  try {
+    if (!resend) return
+
+    const start = formatISODate(startTime)
+    const end   = formatISODate(endTime)
+    const accentColor = tenant.branding?.accentColor ?? '#0f172a'
+
+    const contactLines = [
+      tenant.email && `Email: ${tenant.email}`,
+      tenant.phone && `Phone: ${tenant.phone}`,
+    ].filter(Boolean).join('\n')
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:sans-serif;color:#0f172a;background:#f8fafc;margin:0;padding:32px 16px;">
+  <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
+    <div style="background:${accentColor};padding:24px 28px;">
+      <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">${tenant.name}</p>
+    </div>
+    <div style="padding:28px;">
+      <h1 style="margin:0 0 8px;font-size:20px;font-weight:600;">Booking not accepted</h1>
+      <p style="margin:0 0 24px;color:#64748b;font-size:15px;">Hi ${booking.name}, unfortunately we're unable to accept your booking request for the following session.</p>
+
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:10px 0;color:#64748b;width:40%;">Session type</td>
+          <td style="padding:10px 0;font-weight:500;">${booking.sessionType}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:10px 0;color:#64748b;">Date</td>
+          <td style="padding:10px 0;font-weight:500;">${start.date}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:10px 0;color:#64748b;">Time</td>
+          <td style="padding:10px 0;font-weight:500;">${start.time} – ${end.time}</td>
+        </tr>
+      </table>
+
+      <p style="margin:24px 0 0;color:#64748b;font-size:14px;">Please get in touch if you'd like to arrange an alternative time.</p>
+
+      ${contactLines ? `
+      <div style="margin-top:16px;padding:16px;background:#f8fafc;border-radius:8px;font-size:13px;color:#64748b;">
+        <p style="margin:0 0 4px;font-weight:600;color:#0f172a;">Contact us</p>
+        <p style="margin:0;white-space:pre-line;">${contactLines}</p>
+      </div>` : ''}
+    </div>
+  </div>
+</body>
+</html>`
+
+    const text = `Booking not accepted — ${booking.sessionType} with ${tenant.name}
+
+Hi ${booking.name},
+
+Unfortunately we're unable to accept your booking request for:
+
+Session type: ${booking.sessionType}
+Date: ${start.date}
+Time: ${start.time} – ${end.time}
+
+Please get in touch if you'd like to arrange an alternative time.
+${contactLines ? `\nContact us:\n${contactLines}` : ''}`
+
+    await resend.emails.send({
+      from: FROM,
+      to: booking.email,
+      subject: `Booking update — ${booking.sessionType} with ${tenant.name}`,
+      html,
+      text,
+    })
+  } catch (err) {
+    console.error('[email] Failed to send decline notification:', err)
   }
 }

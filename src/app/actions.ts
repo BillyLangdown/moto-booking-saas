@@ -17,17 +17,12 @@ export async function createBookingAction(
     const autoConfirm = tenant?.autoConfirm === true
     const booking = await bookingService.createBooking({ ...input, status: autoConfirm ? 'confirmed' : 'pending' })
 
-    void (async () => {
-      try {
-        if (!tenant) return
-        await sendAdminNotification(booking, input.startTime, input.endTime, tenant)
-        if (autoConfirm) {
-          await sendBookingConfirmation(booking, input.startTime, input.endTime, tenant)
-        }
-      } catch {
-        // email failures are non-fatal
+    if (tenant) {
+      await sendAdminNotification(booking, input.startTime, input.endTime, tenant)
+      if (autoConfirm) {
+        await sendBookingConfirmation(booking, input.startTime, input.endTime, tenant)
       }
-    })()
+    }
 
     return { booking }
   } catch (err) {
