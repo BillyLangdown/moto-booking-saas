@@ -60,7 +60,7 @@ export default function AvailabilityList({ slots }: Props) {
                   <span className="text-sm text-ink font-medium">
                     {slot.startTime} – {slot.endTime}
                   </span>
-                  <span className="text-sm text-secondary">{slot.resource.name}</span>
+                  {slot.resource && <span className="text-sm text-secondary">{slot.resource.name}</span>}
                   <CapacityBar booked={slot.booked} capacity={slot.capacity} />
                   {slot.booked >= slot.capacity && (
                     <span className="text-xs font-medium text-rose-600">Full</span>

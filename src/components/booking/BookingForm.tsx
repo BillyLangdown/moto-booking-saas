@@ -121,7 +121,7 @@ export default function BookingForm({ slot, tenantId, intakeQuestions, onBack, o
     const input: CreateBookingInput = {
       tenantId,
       slotId:        slot.id,
-      resourceId:    slot.resourceId,
+      resourceId:    slot.resourceId ?? '',
       name:          name.trim(),
       email:         email.trim().toLowerCase(),
       phone:         phone.trim() || undefined,
@@ -157,7 +157,7 @@ export default function BookingForm({ slot, tenantId, intakeQuestions, onBack, o
       <div className="bg-white shadow-sm p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-secondary mb-2">Your session</p>
         <p className="text-base font-semibold text-ink">{slotDate}</p>
-        <p className="text-sm text-secondary mt-0.5">{slot.startTime} – {slot.endTime} · {slot.resource.name}</p>
+        <p className="text-sm text-secondary mt-0.5">{slot.startTime} – {slot.endTime}{slot.resource ? ` · ${slot.resource.name}` : ''}</p>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">

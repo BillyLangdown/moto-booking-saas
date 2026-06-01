@@ -1,5 +1,5 @@
 import { adminSupabase as supabase } from '@/lib/supabase/admin'
-import type { Resource } from '@/types'
+import type { Resource, ResourceType } from '@/types'
 
 export const resourceService = {
   async deleteResource(resourceId: string): Promise<void> {
@@ -7,7 +7,7 @@ export const resourceService = {
     if (error) throw new Error(error.message)
   },
 
-  async createResource(tenantId: string, name: string, type: 'person' | 'asset'): Promise<{ id: string }> {
+  async createResource(tenantId: string, name: string, type: ResourceType): Promise<{ id: string }> {
     const { data, error } = await supabase
       .from('resources')
       .insert({ tenant_id: tenantId, name, type })
@@ -28,7 +28,7 @@ export const resourceService = {
       id:       r.id as string,
       tenantId: r.tenant_id as string,
       name:     r.name as string,
-      type:     r.type as 'person' | 'asset',
+      type:     r.type as ResourceType,
     }))
   },
 }

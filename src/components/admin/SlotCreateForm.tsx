@@ -68,7 +68,7 @@ export default function SlotCreateForm({ tenantId, resources, sessionTypes = [],
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
 
-  const [resourceId, setResourceId] = useState(resources[0]?.id ?? '')
+  const [resourceId, setResourceId] = useState('')
   const [sessionType, setSessionType] = useState(sessionTypes[0] ?? '')
   const [startTime, setStartTime]   = useState('09:00')
   const [endTime, setEndTime]       = useState('17:00')
@@ -116,7 +116,6 @@ export default function SlotCreateForm({ tenantId, resources, sessionTypes = [],
   const slotCount = mode === 'once' ? 1 + extraDays.length : recurDates.length
 
   async function handleSave() {
-    if (!resourceId) { setError('No resource selected.'); return }
     if (mode === 'recurring' && recurDays.length === 0) { setError('Select at least one day.'); return }
     const inputs = buildInputs()
     if (!inputs.length) { setError('No slots to create.'); return }
@@ -172,16 +171,22 @@ export default function SlotCreateForm({ tenantId, resources, sessionTypes = [],
             {/* Body */}
             <div className="overflow-y-auto flex-1 px-5 py-5 flex flex-col gap-4">
 
-              {/* Resource — only shown if multiple */}
-              {resources.length === 0 ? (
-                <p className="text-sm text-secondary bg-amber-50 border border-amber-100 px-3 py-2.5">
-                  No resources found. Add a resource (staff, equipment, etc.) from Settings first.
-                </p>
-              ) : resources.length > 1 && (
+              {/* Resource — optional, grouped by type */}
+              {resources.length > 0 && (
                 <div className="flex flex-col gap-1.5">
-                  <label className={lbl}>Resource</label>
+                  <label className={lbl}>Assign to <span className="normal-case font-normal text-muted">(optional)</span></label>
                   <select value={resourceId} onChange={(e) => setResourceId(e.target.value)} className={field}>
-                    {resources.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    <option value="">No assignment</option>
+                    {(['staff', 'location', 'resource'] as const).map((type) => {
+                      const items = resources.filter((r) => r.type === type)
+                      if (!items.length) return null
+                      const groupLabel = type === 'staff' ? 'Staff' : type === 'location' ? 'Locations' : 'Resources'
+                      return (
+                        <optgroup key={type} label={groupLabel}>
+                          {items.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                        </optgroup>
+                      )
+                    })}
                   </select>
                 </div>
               )}
@@ -317,7 +322,7 @@ export default function SlotCreateForm({ tenantId, resources, sessionTypes = [],
             <div className="border-t border-border px-5 py-4 flex items-center gap-4 shrink-0">
               <button
                 onClick={handleSave}
-                disabled={saving || resources.length === 0}
+                disabled={saving}
                 className="bg-ink text-white px-4 py-2 text-sm font-medium hover:bg-ink/85 transition-colors disabled:opacity-50"
               >
                 {saving ? 'Saving…' : `Create ${slotCount > 1 ? `${slotCount} slots` : 'slot'}`}

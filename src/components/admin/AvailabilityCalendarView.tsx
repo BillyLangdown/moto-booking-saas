@@ -125,7 +125,7 @@ export default function AvailabilityCalendarView({ slots }: Props) {
             return (
               <div key={s.id} className="bg-white shadow-sm px-4 py-3 flex items-center gap-4">
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-ink">{s.resource.name}</p>
+                  <p className="font-semibold text-sm text-ink">{s.resource?.name ?? 'Unassigned'}</p>
                   <p className="text-xs text-secondary mt-0.5">{s.startTime} – {s.endTime} · {s.sessionType}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

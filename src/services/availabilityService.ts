@@ -1,5 +1,5 @@
 import { adminSupabase as supabase } from '@/lib/supabase/admin'
-import type { AvailabilitySlot, CreateSlotInput } from '@/types'
+import type { AvailabilitySlot, CreateSlotInput, ResourceType } from '@/types'
 
 // start_time / end_time are stored as TIMESTAMP in Supabase.
 // We derive the ISO date and HH:mm time strings from them.
@@ -19,13 +19,13 @@ function mapSlot(row: Record<string, unknown>): AvailabilitySlot {
   return {
     id:           row.id as string,
     tenantId:     row.tenant_id as string,
-    resourceId:   row.resource_id as string,
-    resource: {
-      id:       resource?.id as string ?? row.resource_id as string,
+    resourceId:   (row.resource_id as string) ?? undefined,
+    resource: resource ? {
+      id:       resource.id as string,
       tenantId: row.tenant_id as string,
-      name:     resource?.name as string ?? 'Unknown',
-      type:     (resource?.type as 'person' | 'asset') ?? 'person',
-    },
+      name:     resource.name as string,
+      type:     (resource.type as ResourceType) ?? 'staff',
+    } : undefined,
     sessionType: (row.session_type as string) ?? '',
     date,
     startTime,
@@ -81,7 +81,7 @@ export const availabilityService = {
 
     const { error } = await supabase.from('availability_slots').insert({
       tenant_id:    input.tenantId,
-      resource_id:  input.resourceId,
+      resource_id:  input.resourceId || null,
       session_type: input.sessionType,
       start_time:   startTimestamp,
       end_time:     endTimestamp,

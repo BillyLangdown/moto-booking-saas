@@ -29,6 +29,11 @@ body {
   outline-offset: 2px;
 }
 
+/* Subtle 2px radius on interactive and card elements */
+button, input, select, textarea { border-radius: 2px; }
+.shadow-sm { border-radius: 2px; }
+.shadow-2xl { border-radius: 2px; }
+
 @media (max-width: 768px) {
   input, select, textarea { font-size: 16px; }
 }

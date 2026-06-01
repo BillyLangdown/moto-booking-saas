@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Resource } from '@/types'
+import type { Resource, ResourceType } from '@/types'
 import { createResourceAction, deleteResourceAction } from '@/app/platform/actions'
 
 interface Props {
@@ -10,14 +10,14 @@ interface Props {
   resources: Resource[]
 }
 
-const inputClass = 'border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent transition'
+const inputClass = 'border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-ink/20 transition'
 
 export default function ResourceManager({ tenantId, resources }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
   const [name, setName] = useState('')
-  const [type, setType] = useState<'person' | 'asset'>('person')
+  const [type, setType] = useState<ResourceType>('staff')
   const [error, setError] = useState<string | null>(null)
 
   async function handleAdd() {
@@ -39,20 +39,20 @@ export default function ResourceManager({ tenantId, resources }: Props) {
     })
   }
 
+  const typeLabel: Record<ResourceType, string> = { staff: 'Staff', location: 'Location', resource: 'Resource' }
+
   return (
     <div className="flex flex-col gap-4">
 
-      {/* Existing resources */}
       {resources.length === 0 ? (
         <p className="text-sm text-secondary py-4 text-center">No resources added yet.</p>
       ) : (
         <ul className="divide-y divide-border">
           {resources.map((r) => (
             <li key={r.id} className="flex items-center gap-3 py-3">
-              <span className="text-lg" aria-hidden="true">{r.type === 'person' ? '👤' : '📦'}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-ink">{r.name}</p>
-                <p className="text-xs text-secondary capitalize">{r.type}</p>
+                <p className="text-xs text-secondary">{typeLabel[r.type]}</p>
               </div>
               <button
                 onClick={() => handleDelete(r.id)}
@@ -69,7 +69,6 @@ export default function ResourceManager({ tenantId, resources }: Props) {
         </ul>
       )}
 
-      {/* Add resource form */}
       <div className="flex flex-col gap-3 pt-2 border-t border-border">
         <p className="text-xs font-medium uppercase tracking-wide text-secondary">Add resource</p>
         <div className="flex gap-2 flex-wrap">
@@ -80,14 +79,15 @@ export default function ResourceManager({ tenantId, resources }: Props) {
             placeholder="Name"
             className={`${inputClass} flex-1 min-w-32`}
           />
-          <select value={type} onChange={(e) => setType(e.target.value as 'person' | 'asset')} className={inputClass}>
-            <option value="person">Staff</option>
-            <option value="asset">Asset</option>
+          <select value={type} onChange={(e) => setType(e.target.value as ResourceType)} className={inputClass}>
+            <option value="staff">Staff</option>
+            <option value="location">Location</option>
+            <option value="resource">Resource</option>
           </select>
           <button
             onClick={handleAdd}
             disabled={!name.trim()}
-            className="bg-accent text-white px-3 py-2 text-sm font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-ink text-white px-3 py-2 text-sm font-medium hover:bg-ink/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Add
           </button>

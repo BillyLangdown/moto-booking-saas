@@ -71,9 +71,9 @@ export default function SetupWizard({ tenant }: Props) {
   const [logoUrl, setLogoUrl] = useState(tenant.logoUrl ?? '')
 
   // Availability step
-  const [wizResources, setWizResources] = useState<Array<{ name: string; type: 'person' | 'asset' }>>([])
+  const [wizResources, setWizResources] = useState<Array<{ name: string; type: 'staff' | 'location' | 'resource' }>>([])
   const [resInput, setResInput]         = useState('')
-  const [resType, setResType]           = useState<'person' | 'asset'>('person')
+  const [resType, setResType]           = useState<'staff' | 'location' | 'resource'>('staff')
   const [availMode, setAvailMode]       = useState<'once' | 'recurring'>('recurring')
   const [availDays, setAvailDays]       = useState<number[]>([1, 2, 3, 4, 5])
   const [availFrom, setAvailFrom]       = useState(new Date().toISOString().split('T')[0])
@@ -365,9 +365,10 @@ export default function SetupWizard({ tenant }: Props) {
                   placeholder="e.g. John Smith, Bike 1, Studio A"
                   className={inputClass}
                 />
-                <select value={resType} onChange={(e) => setResType(e.target.value as 'person' | 'asset')} className="w-full border border-border bg-white px-3 py-2.5 text-sm text-ink focus:outline-none">
-                  <option value="person">Person (staff)</option>
-                  <option value="asset">Asset (vehicle, room...)</option>
+                <select value={resType} onChange={(e) => setResType(e.target.value as 'staff' | 'location' | 'resource')} className="w-full border border-border bg-white px-3 py-2.5 text-sm text-ink focus:outline-none">
+                  <option value="staff">Staff member</option>
+                  <option value="location">Location (room, court, studio…)</option>
+                  <option value="resource">Resource (equipment, vehicle…)</option>
                 </select>
                 <button type="button" onClick={addResource} className="w-full bg-ink text-white px-3 py-2.5 text-sm font-medium hover:bg-ink/85 transition-colors">
                   Add resource

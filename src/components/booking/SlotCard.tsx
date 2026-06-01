@@ -26,7 +26,7 @@ export default function SlotCard({ slot, onSelect }: Props) {
           <p className="text-base font-semibold text-ink leading-tight">
             {slot.startTime} – {slot.endTime}
           </p>
-          <p className="text-sm text-secondary truncate">{slot.resource.name}</p>
+          {slot.resource && <p className="text-sm text-secondary truncate">{slot.resource.name}</p>}
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           <span className={`text-xs font-medium ${available === 0 ? 'text-rose-600' : 'text-secondary'}`}>

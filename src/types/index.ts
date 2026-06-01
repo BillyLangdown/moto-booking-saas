@@ -2,7 +2,7 @@ export type TenantId = string
 
 export type SessionType = string
 
-export type ResourceType = 'person' | 'asset'
+export type ResourceType = 'staff' | 'location' | 'resource'
 
 export type BookingStatus = 'confirmed' | 'pending' | 'cancelled'
 
@@ -44,8 +44,8 @@ export interface Resource {
 export interface AvailabilitySlot {
   id: string
   tenantId: TenantId
-  resourceId: string
-  resource: Resource
+  resourceId?: string
+  resource?: Resource
   sessionType: SessionType
   date: string
   startTime: string
@@ -74,7 +74,7 @@ export interface Booking {
 
 export interface CreateSlotInput {
   tenantId: TenantId
-  resourceId: string
+  resourceId?: string
   sessionType: SessionType
   date: string
   startTime: string

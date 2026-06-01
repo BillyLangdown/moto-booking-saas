@@ -26,8 +26,10 @@ export default async function BookingPage({ params }: Props) {
 
   const allSlots = await availabilityService.getSlots(tenant.id)
   const configuredTypes = tenant.sessionTypes ?? []
+  // Slots with no sessionType ("All services") are always shown.
+  // Slots with a sessionType are only shown if it matches a configured type.
   const slots = configuredTypes.length > 0
-    ? allSlots.filter((s) => configuredTypes.includes(s.sessionType))
+    ? allSlots.filter((s) => !s.sessionType || configuredTypes.includes(s.sessionType))
     : allSlots
 
   return <BookingPageClient tenant={tenant} slots={slots} />

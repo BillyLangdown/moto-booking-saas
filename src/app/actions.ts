@@ -83,7 +83,7 @@ export async function createSlotsAction(inputs: CreateSlotInput[]): Promise<{ er
 export async function createResourceAction(
   tenantId: string,
   name: string,
-  type: 'person' | 'asset',
+  type: 'staff' | 'location' | 'resource',
 ): Promise<{ error?: string; resourceId?: string }> {
   try {
     const { id } = await resourceService.createResource(tenantId, name, type)

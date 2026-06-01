@@ -38,20 +38,19 @@ export default function SettingsForm({ tenant, slotSessionTypes = [], resources:
   const [error, setError]     = useState<string | null>(null)
 
   const [resources, setResources] = useState<Resource[]>(initialResources)
-  const [resName, setResName]     = useState('')
-  const [resType, setResType]     = useState<'person' | 'asset'>('person')
-  const [resAdding, setResAdding] = useState(false)
+  const [resNames, setResNames]   = useState<Record<string, string>>({ staff: '', location: '', resource: '' })
+  const [resAdding, setResAdding] = useState<string | null>(null)
   const [resError, setResError]   = useState<string | null>(null)
 
-  async function handleAddResource() {
-    const trimmed = resName.trim()
+  async function handleAddResource(type: 'staff' | 'location' | 'resource') {
+    const trimmed = resNames[type].trim()
     if (!trimmed) return
-    setResAdding(true); setResError(null)
-    const result = await createResourceAction(tenant.id, trimmed, resType)
-    setResAdding(false)
+    setResAdding(type); setResError(null)
+    const result = await createResourceAction(tenant.id, trimmed, type)
+    setResAdding(null)
     if (result.error) { setResError(result.error); return }
-    setResources((prev) => [...prev, { id: result.resourceId!, tenantId: tenant.id, name: trimmed, type: resType }])
-    setResName('')
+    setResources((prev) => [...prev, { id: result.resourceId!, tenantId: tenant.id, name: trimmed, type }])
+    setResNames((prev) => ({ ...prev, [type]: '' }))
   }
 
   async function handleDeleteResource(id: string) {
@@ -204,88 +203,62 @@ export default function SettingsForm({ tenant, slotSessionTypes = [], resources:
       {/* ── Resources ── */}
       {tab === 'Resources' && (
         <div className="flex flex-col gap-4">
-          <div className="bg-white shadow-sm p-4 sm:p-5 flex flex-col gap-4">
-            <div>
-              <p className="text-sm font-medium text-ink">Resources</p>
-              <p className="text-xs text-secondary mt-0.5">
-                The people or things customers book — a staff member, vehicle, room, or equipment. Each slot is linked to one resource.
-              </p>
-            </div>
-
-            {/* Add form */}
-            <div className="flex flex-col gap-2">
-              <input
-                type="text"
-                value={resName}
-                onChange={(e) => setResName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddResource())}
-                placeholder="e.g. John Smith, Bike 1, Room A"
-                className={inputClass}
-              />
-              <select
-                value={resType}
-                onChange={(e) => setResType(e.target.value as 'person' | 'asset')}
-                className="w-full border border-border bg-white px-3 py-3 text-sm text-ink focus:outline-none"
-              >
-                <option value="person">Person</option>
-                <option value="asset">Asset (vehicle, room...)</option>
-              </select>
-              <button
-                type="button"
-                onClick={handleAddResource}
-                disabled={resAdding || !resName.trim()}
-                className="w-full bg-ink text-white py-3 text-sm font-medium hover:bg-ink/85 transition-colors disabled:opacity-50"
-              >
-                {resAdding ? 'Adding…' : 'Add resource'}
-              </button>
-            </div>
-
-            {/* List */}
-            {resources.length > 0 ? (
-              <ul className="flex flex-col divide-y divide-border/50">
-                {resources.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between py-3 gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 flex items-center justify-center shrink-0 bg-subtle border border-border">
-                        {r.type === 'person' ? (
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-                            <circle cx="7" cy="5" r="3" stroke="currentColor" strokeWidth="1.3"/>
-                            <path d="M2 12.5c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                          </svg>
-                        ) : (
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-                            <rect x="1" y="4" width="12" height="8" rx="1.2" stroke="currentColor" strokeWidth="1.3"/>
-                            <path d="M5 4V3a1 1 0 011-1h2a1 1 0 011 1v1" stroke="currentColor" strokeWidth="1.3"/>
-                          </svg>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-ink truncate">{r.name}</p>
-                        <p className="text-xs text-secondary">{r.type === 'person' ? 'Person' : 'Asset'}</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteResource(r.id)}
-                      className="shrink-0 text-xs text-secondary hover:text-rose-500 transition-colors px-2 py-1"
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-secondary text-center py-8 border border-dashed border-border">
-                No resources yet — add your first one above.
-              </p>
-            )}
-
-            {resError && <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2">{resError}</p>}
-          </div>
-
-          <p className="text-xs text-secondary px-1">
-            Tip: add one resource per staff member or piece of equipment so bookings spread across them correctly.
+          <p className="text-xs text-secondary">
+            Add the people, places, and equipment that customers can be assigned to when booking. All are optional — only add what's relevant to your business.
           </p>
+
+          {resError && <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2">{resError}</p>}
+
+          {(
+            [
+              { type: 'staff',    label: 'Staff',     placeholder: 'e.g. John Smith, Sarah Jones' },
+              { type: 'location', label: 'Locations',  placeholder: 'e.g. Studio A, Court 1, Room 3' },
+              { type: 'resource', label: 'Resources',  placeholder: 'e.g. Bike 1, Camera Kit, Kayak' },
+            ] as const
+          ).map(({ type, label, placeholder }) => {
+            const items = resources.filter((r) => r.type === type)
+            return (
+              <div key={type} className="bg-white shadow-sm p-4 sm:p-5 flex flex-col gap-3">
+                <p className="text-sm font-semibold text-ink">{label}</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={resNames[type]}
+                    onChange={(e) => setResNames((p) => ({ ...p, [type]: e.target.value }))}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddResource(type))}
+                    placeholder={placeholder}
+                    className={`${inputClass} flex-1`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddResource(type)}
+                    disabled={resAdding === type || !resNames[type].trim()}
+                    className="shrink-0 bg-ink text-white px-4 py-2 text-sm font-medium hover:bg-ink/85 transition-colors disabled:opacity-50"
+                  >
+                    {resAdding === type ? 'Adding…' : 'Add'}
+                  </button>
+                </div>
+                {items.length > 0 ? (
+                  <ul className="flex flex-col divide-y divide-border/50">
+                    {items.map((r) => (
+                      <li key={r.id} className="flex items-center justify-between py-2.5 gap-3">
+                        <p className="text-sm text-ink truncate">{r.name}</p>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteResource(r.id)}
+                          className="shrink-0 text-xs text-secondary hover:text-rose-500 transition-colors px-2 py-1"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted">None added yet.</p>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
