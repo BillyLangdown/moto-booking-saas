@@ -49,6 +49,7 @@ export async function createBusinessAction(
   )
 
   if (authError) {
+    console.error('[inviteUserByEmail] error:', JSON.stringify(authError), 'redirectTo:', `${baseUrl}/auth/callback?next=/setup`)
     await adminSupabase.from('tenants').delete().eq('id', tenant.id)
     return { error: authError.message }
   }
