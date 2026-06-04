@@ -68,6 +68,23 @@ export function generateICS(opts: ICSOptions): string {
   return lines.map(foldLine).join('\r\n')
 }
 
+export function addToCalendarUrl(appUrl: string, opts: {
+  summary: string
+  description: string
+  location?: string
+  startIso: string
+  endIso: string
+}): string {
+  const p = new URLSearchParams({
+    title:       opts.summary,
+    start:       opts.startIso,
+    end:         opts.endIso,
+    description: opts.description,
+    ...(opts.location ? { location: opts.location } : {}),
+  })
+  return `${appUrl}/calendar?${p}`
+}
+
 export function googleCalendarUrl(opts: {
   summary: string
   description: string

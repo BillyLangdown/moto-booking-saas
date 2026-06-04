@@ -13,6 +13,16 @@ interface Props {
 export default function BookingSuccess({ booking, tenant, onBookAnother }: Props) {
   const isPending = booking.status === 'pending'
 
+  const calUrl = booking.startTimeIso && booking.endTimeIso
+    ? `/calendar?${new URLSearchParams({
+        title:       `${booking.sessionType} – ${tenant.name}`,
+        start:       booking.startTimeIso,
+        end:         booking.endTimeIso,
+        description: `Booking with ${tenant.name}. Ref: ${booking.id}`,
+        ...(tenant.address ? { location: tenant.address } : {}),
+      })}`
+    : null
+
   return (
     <div className="flex flex-col items-center text-center gap-6 py-8">
       <div className="flex h-14 w-14 items-center justify-center bg-emerald-100">
@@ -62,6 +72,19 @@ export default function BookingSuccess({ booking, tenant, onBookAnother }: Props
           <Badge variant="status" value={booking.status} />
         </div>
       </div>
+
+      {!isPending && calUrl && (
+        <a
+          href={calUrl}
+          className="w-full flex items-center justify-center gap-2 border border-border bg-white px-4 py-3 text-sm font-medium text-ink hover:bg-gray-50 transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          Add to Calendar
+        </a>
+      )}
 
       <Button variant="secondary" onClick={onBookAnother}>
         Book another slot

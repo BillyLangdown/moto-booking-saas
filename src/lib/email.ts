@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { addToCalendarUrl } from '@/lib/ics'
 import type { Booking, Tenant } from '@/types'
 
 const resend = process.env.RESEND_API_KEY
@@ -36,6 +37,16 @@ export async function sendBookingConfirmation(
   ].filter(Boolean).join('\n')
 
   const accentColor = tenant.branding?.accentColor ?? '#0f172a'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  const calUrl = addToCalendarUrl(appUrl, {
+    summary:     `${booking.sessionType} – ${tenant.name}`,
+    description: `Booking with ${tenant.name}. Ref: ${booking.id}`,
+    location:    tenant.address || undefined,
+    startIso:    startTime,
+    endIso:      endTime,
+  })
+
   const html = `
 <!DOCTYPE html>
 <html>
@@ -74,6 +85,12 @@ export async function sendBookingConfirmation(
         <p style="margin:0;white-space:pre-line;">${contactLines}</p>
       </div>` : ''}
 
+      <div style="margin-top:24px;border-top:1px solid #e2e8f0;padding-top:20px;">
+        <a href="${calUrl}"
+          style="display:block;padding:13px 20px;background:#ffffff;color:#0f172a;text-decoration:none;font-size:14px;font-weight:600;text-align:center;border-radius:8px;border:1.5px solid #e2e8f0;">
+          📅 Add to Calendar
+        </a>
+      </div>
     </div>
   </div>
 </body>
