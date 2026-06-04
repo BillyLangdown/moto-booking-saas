@@ -12,6 +12,12 @@ function isoToTime(iso: string): string {
   return iso.slice(11, 16)
 }
 
+function fillTimesFromSlot(row: Record<string, unknown>): void {
+  const slot = row.availability_slots as { start_time?: string; end_time?: string } | null
+  if (!row.start_time && slot?.start_time) row.start_time = slot.start_time
+  if (!row.end_time && slot?.end_time) row.end_time = slot.end_time
+}
+
 function mapBooking(row: Record<string, unknown>): Booking {
   const startIso = row.start_time as string | null | undefined
   const endIso   = row.end_time   as string | null | undefined
@@ -74,20 +80,38 @@ export const bookingService = {
   async getBookingById(id: string): Promise<Booking | null> {
     const { data, error } = await supabase
       .from('bookings')
-      .select('*')
+      .select('*, availability_slots!slot_id(start_time, end_time)')
       .eq('id', id)
       .single()
 
     if (error || !data) return null
-    return mapBooking(data as Record<string, unknown>)
+    const row = data as Record<string, unknown>
+    fillTimesFromSlot(row)
+    return mapBooking(row)
   },
 
   async createBooking(input: CreateBookingInput): Promise<Booking> {
     // Atomically reserve a seat. Returns false if slot is already full.
     const { data: claimed, error: claimError } = await supabase
       .rpc('claim_slot', { p_slot_id: input.slotId })
-    if (claimError) throw new Error(`Unable to reserve slot: ${claimError.message}`)
-    if (!claimed) throw new Error('This slot is fully booked. Please go back and choose another time.')
+    if (claimError) {
+      if (claimError.message.includes('Could not find the function')) {
+        // claim_slot migration not yet applied — non-atomic fallback
+        console.warn('[booking] claim_slot not found — run supabase/migrations/20240101000000_claim_slot.sql')
+        const { data: slot } = await supabase
+          .from('availability_slots')
+          .select('booked, capacity')
+          .eq('id', input.slotId)
+          .single()
+        if (!slot || (slot.booked as number) >= (slot.capacity as number)) {
+          throw new Error('This slot is fully booked. Please go back and choose another time.')
+        }
+      } else {
+        throw new Error(`Unable to reserve slot: ${claimError.message}`)
+      }
+    } else if (!claimed) {
+      throw new Error('This slot is fully booked. Please go back and choose another time.')
+    }
 
     const { data, error } = await supabase
       .from('bookings')
@@ -130,10 +154,12 @@ export const bookingService = {
       .from('bookings')
       .update({ status: 'confirmed' })
       .eq('id', bookingId)
-      .select()
+      .select('*, availability_slots!slot_id(start_time, end_time)')
       .single()
 
     if (error || !data) throw new Error(error?.message ?? 'Failed to confirm booking')
-    return mapBooking(data as Record<string, unknown>)
+    const row = data as Record<string, unknown>
+    fillTimesFromSlot(row)
+    return mapBooking(row)
   },
 }

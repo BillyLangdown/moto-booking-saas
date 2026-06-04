@@ -74,19 +74,33 @@ export default function BookingSuccess({ booking, tenant, onBookAnother }: Props
         </div>
       </div>
 
-      {gcalUrl && !isPending && (
-        <a
-          href={gcalUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full flex items-center justify-center gap-2 border border-border bg-white px-4 py-3 text-sm font-medium text-ink hover:bg-gray-50 transition-colors"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-            <path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-          Add to Google Calendar
-        </a>
+      {!isPending && (
+        <div className="w-full flex flex-col gap-2">
+          {gcalUrl && (
+            <a
+              href={gcalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 border border-border bg-white px-4 py-3 text-sm font-medium text-ink hover:bg-gray-50 transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              Google Calendar
+            </a>
+          )}
+          <a
+            href={`/api/booking/${booking.id}/ics`}
+            className="w-full flex items-center justify-center gap-2 border border-border bg-white px-4 py-3 text-sm font-medium text-ink hover:bg-gray-50 transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            Apple / Outlook
+          </a>
+        </div>
       )}
 
       <Button variant="secondary" onClick={onBookAnother}>

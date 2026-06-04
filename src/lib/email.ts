@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 import type { Booking, Tenant } from '@/types'
-import { generateICS, googleCalendarUrl } from '@/lib/ics'
+import { googleCalendarUrl } from '@/lib/ics'
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -37,17 +37,8 @@ export async function sendBookingConfirmation(
   ].filter(Boolean).join('\n')
 
   const accentColor = tenant.branding?.accentColor ?? '#0f172a'
-
-  const icsContent = generateICS({
-    uid: booking.id,
-    summary: `${booking.sessionType} – ${tenant.name}`,
-    description: `Booking with ${tenant.name}. Ref: ${booking.id}`,
-    location: tenant.address || undefined,
-    startIso: startTime,
-    endIso: endTime,
-    organizerName: tenant.name,
-    organizerEmail: tenant.email || FROM,
-  })
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
   const gcalUrl = googleCalendarUrl({
     summary: `${booking.sessionType} – ${tenant.name}`,
@@ -96,12 +87,23 @@ export async function sendBookingConfirmation(
       </div>` : ''}
 
       <div style="margin-top:24px;border-top:1px solid #e2e8f0;padding-top:20px;">
-        <p style="margin:0 0 12px;font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Add to your calendar</p>
-        <a href="${gcalUrl}" target="_blank"
-          style="display:inline-block;padding:10px 18px;background:#4285f4;color:#ffffff;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;">
-          &#128197;&nbsp; Google Calendar
-        </a>
-        <p style="margin:10px 0 0;font-size:12px;color:#94a3b8;">The .ics file attached to this email works with Apple Calendar and Outlook.</p>
+        <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Add to calendar</p>
+        <table cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding-right:8px;">
+              <a href="${gcalUrl}" target="_blank"
+                style="display:inline-block;padding:10px 16px;background:#ffffff;color:#0f172a;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;">
+                Google Calendar
+              </a>
+            </td>
+            <td>
+              <a href="${appUrl}/api/booking/${booking.id}/ics"
+                style="display:inline-block;padding:10px 16px;background:#ffffff;color:#0f172a;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;">
+                Apple / Outlook
+              </a>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
   </div>
@@ -125,11 +127,6 @@ ${contactLines ? `Contact the business:\n${contactLines}` : ''}`
       subject: `Booking confirmed — ${booking.sessionType} with ${tenant.name}`,
       html,
       text,
-      attachments: [{
-        filename: 'booking.ics',
-        content: Buffer.from(icsContent, 'utf-8'),
-        contentType: 'text/calendar; charset=utf-8; method=REQUEST',
-      }],
     })
     if (error) console.error('[email] Confirmation send failed:', error)
     else console.log('[email] Confirmation sent:', data?.id, '→', booking.email)
@@ -154,6 +151,14 @@ export async function sendAdminNotification(
     const appUrl = process.env.NEXT_PUBLIC_APP_URL
       ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
+    const gcalUrl = googleCalendarUrl({
+      summary: `${booking.sessionType} – ${booking.name}`,
+      description: `Customer: ${booking.name} (${booking.email}). Ref: ${booking.id}`,
+      location: tenant.address || undefined,
+      startIso: startTime,
+      endIso: endTime,
+    })
+
     const isPending = booking.status === 'pending'
     const intakeRows = booking.intakeAnswers && Object.keys(booking.intakeAnswers).length > 0
       ? Object.entries(booking.intakeAnswers).map(([q, a]) => `
@@ -167,31 +172,46 @@ export async function sendAdminNotification(
       ? '<span style="display:inline-block;padding:2px 10px;background:#fef9c3;color:#854d0e;border-radius:999px;font-size:12px;font-weight:600;">Pending review</span>'
       : '<span style="display:inline-block;padding:2px 10px;background:#dcfce7;color:#166534;border-radius:999px;font-size:12px;font-weight:600;">Confirmed</span>'
 
-    const actionButtons = isPending ? `
-      <div style="margin-top:32px;border-top:1px solid #e2e8f0;padding-top:24px;">
-        <p style="margin:0 0 14px;font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Action required</p>
-        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    const calendarSection = `
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid #e2e8f0;">
+        <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Add to calendar</p>
+        <table cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td style="padding-right:6px;">
-              <a href="${appUrl}/api/booking/${booking.id}/confirm"
-                style="display:block;padding:14px 20px;background:#16a34a;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;text-align:center;border-radius:8px;">
-                ✓&nbsp;&nbsp;Confirm booking
+            <td style="padding-right:8px;">
+              <a href="${gcalUrl}" target="_blank"
+                style="display:inline-block;padding:10px 16px;background:#ffffff;color:#0f172a;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;">
+                Google Calendar
               </a>
             </td>
-            <td style="padding-left:6px;">
-              <a href="${appUrl}/api/booking/${booking.id}/deny"
-                style="display:block;padding:14px 20px;background:#fef2f2;color:#dc2626;text-decoration:none;font-size:14px;font-weight:600;text-align:center;border-radius:8px;border:1px solid #fecaca;">
-                ✕&nbsp;&nbsp;Deny booking
+            <td>
+              <a href="${appUrl}/api/booking/${booking.id}/ics"
+                style="display:inline-block;padding:10px 16px;background:#ffffff;color:#0f172a;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;">
+                Apple / Outlook
               </a>
             </td>
           </tr>
         </table>
+      </div>`
+
+    const actionButtons = isPending ? `
+      <div style="margin-top:32px;border-top:1px solid #e2e8f0;padding-top:24px;">
+        <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Action required</p>
+        <a href="${appUrl}/api/booking/${booking.id}/confirm"
+          style="display:block;padding:15px 20px;background:#0f172a;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;text-align:center;border-radius:8px;margin-bottom:10px;">
+          Confirm booking
+        </a>
+        <a href="${appUrl}/api/booking/${booking.id}/deny"
+          style="display:block;padding:15px 20px;background:#ffffff;color:#64748b;text-decoration:none;font-size:14px;font-weight:500;text-align:center;border-radius:8px;border:1.5px solid #e2e8f0;">
+          Decline booking
+        </a>
+        ${calendarSection}
       </div>` : `
       <div style="margin-top:28px;">
         <a href="${appUrl}/dashboard/bookings"
-          style="display:inline-block;padding:12px 24px;background:${accentColor};color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">
-          View in dashboard →
+          style="display:block;padding:15px 20px;background:#0f172a;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;text-align:center;border-radius:8px;">
+          View in dashboard
         </a>
+        ${calendarSection}
       </div>`
 
     const html = `
@@ -273,8 +293,8 @@ ${isPending ? `\nConfirm: ${appUrl}/api/booking/${booking.id}/confirm\nDeny: ${a
       from: FROM,
       to: tenant.email,
       subject: isPending
-        ? `Booking request — ${booking.name} (${booking.sessionType})`
-        : `New booking — ${booking.name} (${booking.sessionType})`,
+        ? `Booking request — ${booking.name}${booking.sessionType ? ` (${booking.sessionType})` : ''}`
+        : `New booking — ${booking.name}${booking.sessionType ? ` (${booking.sessionType})` : ''}`,
       html,
       text,
     })

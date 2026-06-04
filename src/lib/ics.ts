@@ -19,9 +19,9 @@ function escapeText(str: string): string {
     .replace(/\n/g, '\\n')
 }
 
-// 2024-01-15T10:00:00.000Z → 20240115T100000Z
+// Parse through Date so any timezone format (Z, +00:00, etc.) becomes valid UTC
 function dtFmt(iso: string): string {
-  return iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  return new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 }
 
 export interface ICSOptions {
@@ -44,7 +44,7 @@ export function generateICS(opts: ICSOptions): string {
     'VERSION:2.0',
     'PRODID:-//Slick Booking//EN',
     'CALSCALE:GREGORIAN',
-    'METHOD:REQUEST',
+    'METHOD:PUBLISH',
     'BEGIN:VEVENT',
     `UID:${opts.uid}@slick`,
     `DTSTAMP:${now}`,
@@ -82,5 +82,5 @@ export function googleCalendarUrl(opts: {
     `details=${encodeURIComponent(opts.description)}`,
     ...(opts.location ? [`location=${encodeURIComponent(opts.location)}`] : []),
   ]
-  return `https://calendar.google.com/calendar/render?${parts.join('&')}`
+  return `https://calendar.google.com/calendar/r/eventedit?${parts.join('&')}`
 }

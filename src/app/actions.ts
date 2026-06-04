@@ -43,16 +43,14 @@ export async function cancelBookingAction(bookingId: string): Promise<{ error?: 
 export async function confirmBookingAction(bookingId: string): Promise<{ error?: string }> {
   try {
     const booking = await bookingService.confirmBooking(bookingId)
-    void (async () => {
-      try {
-        const tenant = await tenantService.getTenantById(booking.tenantId)
-        if (tenant && booking.startTimeIso && booking.endTimeIso) {
-          await sendBookingConfirmation(booking, booking.startTimeIso, booking.endTimeIso, tenant)
-        }
-      } catch {
-        // email failures are non-fatal
+    try {
+      const tenant = await tenantService.getTenantById(booking.tenantId)
+      if (tenant && booking.startTimeIso && booking.endTimeIso) {
+        await sendBookingConfirmation(booking, booking.startTimeIso, booking.endTimeIso, tenant)
       }
-    })()
+    } catch {
+      // email failures are non-fatal to the confirm action
+    }
     revalidatePath('/dashboard/bookings')
     return {}
   } catch (err) {
