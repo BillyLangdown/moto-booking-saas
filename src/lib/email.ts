@@ -1,5 +1,5 @@
 import { Resend } from 'resend'
-import { addToCalendarUrl } from '@/lib/ics'
+import { googleCalendarUrl } from '@/lib/ics'
 import type { Booking, Tenant } from '@/types'
 
 const resend = process.env.RESEND_API_KEY
@@ -39,13 +39,25 @@ export async function sendBookingConfirmation(
   const accentColor = tenant.branding?.accentColor ?? '#0f172a'
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
     ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-  const calUrl = addToCalendarUrl(appUrl, {
-    summary:     `${booking.sessionType} – ${tenant.name}`,
-    description: `Booking with ${tenant.name}. Ref: ${booking.id}`,
+
+  const eventTitle = `${booking.sessionType} – ${tenant.name}`
+  const eventDesc  = `Booking with ${tenant.name}. Ref: ${booking.id}`
+
+  const gcalUrl = googleCalendarUrl({
+    summary:     eventTitle,
+    description: eventDesc,
     location:    tenant.address || undefined,
     startIso:    startTime,
     endIso:      endTime,
   })
+
+  const icsUrl = `${appUrl}/api/booking/ics?${new URLSearchParams({
+    title:       eventTitle,
+    start:       startTime,
+    end:         endTime,
+    description: eventDesc,
+    ...(tenant.address ? { location: tenant.address } : {}),
+  })}`
 
   const html = `
 <!DOCTYPE html>
@@ -86,10 +98,23 @@ export async function sendBookingConfirmation(
       </div>` : ''}
 
       <div style="margin-top:24px;border-top:1px solid #e2e8f0;padding-top:20px;">
-        <a href="${calUrl}"
-          style="display:block;padding:13px 20px;background:#ffffff;color:#0f172a;text-decoration:none;font-size:14px;font-weight:600;text-align:center;border-radius:8px;border:1.5px solid #e2e8f0;">
-          📅 Add to Calendar
-        </a>
+        <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Add to calendar</p>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding-right:6px;">
+              <a href="${gcalUrl}" target="_blank"
+                style="display:block;padding:11px 0;background:#ffffff;color:#0f172a;text-decoration:none;font-size:13px;font-weight:600;text-align:center;border-radius:8px;border:1.5px solid #e2e8f0;">
+                Google Calendar
+              </a>
+            </td>
+            <td style="padding-left:6px;">
+              <a href="${icsUrl}"
+                style="display:block;padding:11px 0;background:#ffffff;color:#0f172a;text-decoration:none;font-size:13px;font-weight:600;text-align:center;border-radius:8px;border:1.5px solid #e2e8f0;">
+                Apple Calendar
+              </a>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
   </div>
