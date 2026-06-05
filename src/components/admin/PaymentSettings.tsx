@@ -28,7 +28,7 @@ export default function PaymentSettings({ tenant, sessionTypes }: Props) {
 
   const [paymentMode, setPaymentMode]               = useState<PaymentMode>(tenant.paymentMode)
   const [prices, setPrices]                         = useState<SessionTypePrices>(tenant.sessionTypePrices ?? {})
-  const [showPrices, setShowPrices]                 = useState(tenant.showPricesOnBookingPage)
+  const [showPrices, setShowPrices]                 = useState(tenant.showPricesOnBookingPage ?? true)
   const [rawInputs, setRawInputs]                   = useState<Record<string, string>>(
     () => initRaw(sessionTypes, tenant.sessionTypePrices ?? {})
   )
@@ -67,7 +67,8 @@ export default function PaymentSettings({ tenant, sessionTypes }: Props) {
   }
 
   const needsPayment    = paymentMode !== 'none'
-  const showPriceInputs = needsPayment && sessionTypes.length > 0
+  const stripeReady     = needsPayment && !!tenant.stripeOnboarded
+  const showPriceInputs = stripeReady && sessionTypes.length > 0
 
   return (
     <div className="flex flex-col gap-4">
@@ -114,7 +115,7 @@ export default function PaymentSettings({ tenant, sessionTypes }: Props) {
       )}
 
       {/* Show prices on booking page toggle */}
-      {needsPayment && (
+      {stripeReady && (
         <div className="bg-white shadow-sm p-4 sm:p-5">
           <label className="flex items-start justify-between gap-4 cursor-pointer">
             <div className="flex flex-col gap-1 flex-1">
