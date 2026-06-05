@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import LogoUpload from './LogoUpload'
 import IntakeBuilder from './IntakeBuilder'
 import SessionTypeEditor from './SessionTypeEditor'
+import BookingPageLink from './BookingPageLink'
 import PaymentSettings from './PaymentSettings'
 
 interface Props { tenant: Tenant; slotSessionTypes?: string[]; resources?: Resource[] }
@@ -139,11 +140,7 @@ export default function SettingsForm({ tenant, slotSessionTypes = [], resources:
           </div>
         </div>
         {tabsHasMore && (
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pt-0.5 px-1.5">
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-              <path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted"/>
-            </svg>
-          </div>
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-16" style={{ background: 'linear-gradient(to left, #eaeff6, transparent)' }} />
         )}
       </div>
 
@@ -169,13 +166,10 @@ export default function SettingsForm({ tenant, slotSessionTypes = [], resources:
             <Input label="Address" value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
 
-          <div className="bg-white shadow-sm p-4 sm:p-5 flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-secondary mb-1">Read only</p>
+          <div className="bg-white shadow-sm p-4 sm:p-5 flex flex-col gap-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-secondary">Read only</p>
+            <BookingPageLink slug={tenant.slug} variant="full" />
             <div className="flex flex-col gap-0.5">
-              <span className="text-xs text-secondary">Booking URL</span>
-              <span className="font-mono text-xs text-ink break-all">/book/{tenant.slug}</span>
-            </div>
-            <div className="flex flex-col gap-0.5 mt-1">
               <span className="text-xs text-secondary">Tenant ID</span>
               <span className="font-mono text-xs text-muted break-all">{tenant.id}</span>
             </div>
