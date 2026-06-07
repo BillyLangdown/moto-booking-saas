@@ -16,11 +16,7 @@ export async function POST(req: NextRequest) {
     let accountId = tenant.stripeAccountId
     if (!accountId) {
       const account = await stripe.accounts.create({
-        controller: {
-          stripe_dashboard: { type: 'express' },
-          fees:             { payer: 'application' },
-          losses:           { payments: 'application' },
-        },
+        type: 'express',
         capabilities: {
           card_payments: { requested: true },
           transfers:     { requested: true },
@@ -31,7 +27,7 @@ export async function POST(req: NextRequest) {
       accountId = account.id
       await adminSupabase
         .from('tenants')
-        .update({ stripe_account_id: accountId })
+        .update({ stripe_account_id: accountId, stripe_onboarded: false })
         .eq('id', tenantId)
     } else {
       await stripe.accounts.update(accountId, {

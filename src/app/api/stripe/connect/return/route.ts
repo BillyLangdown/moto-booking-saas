@@ -13,8 +13,13 @@ export async function GET(req: NextRequest) {
     const tenant = await tenantService.getTenantById(tenantId)
 
     if (tenant?.stripeAccountId) {
+      await stripe.accounts.update(tenant.stripeAccountId, {
+        capabilities: {
+          card_payments: { requested: true },
+          transfers:     { requested: true },
+        },
+      })
       const account = await stripe.accounts.retrieve(tenant.stripeAccountId)
-      // Mark as onboarded if they've submitted details (charges_enabled may take time)
       if (account.details_submitted || account.charges_enabled) {
         await adminSupabase
           .from('tenants')

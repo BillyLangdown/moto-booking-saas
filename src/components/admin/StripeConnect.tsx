@@ -34,9 +34,19 @@ export default function StripeConnect({ tenant }: Props) {
           <p className="text-sm font-medium text-ink">Stripe account</p>
           <p className="font-mono text-xs text-muted">{tenant.stripeAccountId}</p>
         </div>
-        <span className="shrink-0 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1">
-          Connected
-        </span>
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={handleConnect}
+            disabled={loading}
+            className="text-xs text-secondary hover:text-ink transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Redirecting…' : 'Reconnect'}
+          </button>
+          <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1">
+            Connected
+          </span>
+        </div>
       </div>
     )
   }
