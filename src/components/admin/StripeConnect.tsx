@@ -2,13 +2,15 @@
 
 import { useState } from 'react'
 import type { Tenant } from '@/types'
+import { disconnectStripeAction } from '@/app/actions'
 import Button from '@/components/ui/Button'
 
 interface Props { tenant: Tenant }
 
 export default function StripeConnect({ tenant }: Props) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
+  const [loading, setLoading]         = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
+  const [error, setError]             = useState<string | null>(null)
 
   async function handleConnect() {
     setLoading(true)
@@ -27,6 +29,13 @@ export default function StripeConnect({ tenant }: Props) {
     }
   }
 
+  async function handleDisconnect() {
+    if (!confirm('Disconnect Stripe? Customers will no longer be able to pay online until you reconnect.')) return
+    setDisconnecting(true)
+    await disconnectStripeAction(tenant.id)
+    setDisconnecting(false)
+  }
+
   if (tenant.stripeOnboarded) {
     return (
       <div className="bg-white shadow-sm p-4 sm:p-5 flex items-center justify-between gap-4">
@@ -37,11 +46,11 @@ export default function StripeConnect({ tenant }: Props) {
         <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
-            onClick={handleConnect}
-            disabled={loading}
-            className="text-xs text-secondary hover:text-ink transition-colors disabled:opacity-50"
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            className="text-xs text-secondary hover:text-rose-500 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Redirecting…' : 'Reconnect'}
+            {disconnecting ? 'Disconnecting…' : 'Disconnect'}
           </button>
           <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1">
             Connected

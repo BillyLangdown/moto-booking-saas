@@ -112,6 +112,8 @@ export async function confirmBookingAction(bookingId: string): Promise<{ error?:
     const needsPayment = amount > 0 && !!tenant?.stripeOnboarded && !!tenant?.stripeAccountId
 
     if (needsPayment && tenant) {
+      const account = await stripe.accounts.retrieve(tenant.stripeAccountId!)
+      if (!account.charges_enabled) throw new Error('Stripe account not fully activated')
       // Don't mark confirmed yet - send payment link, webhook confirms after payment
       const checkoutUrl = await createCheckoutSession({
         bookingId:        bookingId,
@@ -229,6 +231,19 @@ export async function savePaymentSettingsAction(
     return {}
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Failed to save payment settings' }
+  }
+}
+
+export async function disconnectStripeAction(tenantId: string): Promise<{ error?: string }> {
+  try {
+    await adminSupabase
+      .from('tenants')
+      .update({ stripe_account_id: null, stripe_onboarded: false })
+      .eq('id', tenantId)
+    revalidatePath('/dashboard/settings')
+    return {}
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to disconnect Stripe' }
   }
 }
 
