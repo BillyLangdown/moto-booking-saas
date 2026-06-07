@@ -21,6 +21,10 @@ export async function POST(req: NextRequest) {
           fees:             { payer: 'application' },
           losses:           { payments: 'application' },
         },
+        capabilities: {
+          card_payments: { requested: true },
+          transfers:     { requested: true },
+        },
         ...(tenant.email ? { email: tenant.email } : {}),
         metadata: { tenant_id: tenantId },
       })
@@ -29,6 +33,13 @@ export async function POST(req: NextRequest) {
         .from('tenants')
         .update({ stripe_account_id: accountId })
         .eq('id', tenantId)
+    } else {
+      await stripe.accounts.update(accountId, {
+        capabilities: {
+          card_payments: { requested: true },
+          transfers:     { requested: true },
+        },
+      })
     }
 
     const url = await createConnectAccountLink(accountId, tenantId, appUrl)
