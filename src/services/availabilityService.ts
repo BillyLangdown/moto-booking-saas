@@ -1,5 +1,5 @@
 import { adminSupabase as supabase } from '@/lib/supabase/admin'
-import type { AvailabilitySlot, CreateSlotInput, ResourceType } from '@/types'
+import type { AvailabilitySlot, CreateSlotInput, Resource, ResourceType } from '@/types'
 
 // start_time / end_time are stored as TIMESTAMP in Supabase.
 // We derive the ISO date and HH:mm time strings from them.
@@ -10,22 +10,29 @@ function parseTimestamp(ts: string): { date: string; time: string } {
   return { date, time }
 }
 
+function toResource(r: Record<string, unknown> | null, tenantId: string, fallbackType: ResourceType): Resource | undefined {
+  if (!r) return undefined
+  return {
+    id:       r.id as string,
+    tenantId,
+    name:     r.name as string,
+    type:     (r.type as ResourceType) ?? fallbackType,
+  }
+}
+
 function mapSlot(row: Record<string, unknown>): AvailabilitySlot {
   const { date, time: startTime } = parseTimestamp(row.start_time as string)
   const { time: endTime }         = parseTimestamp(row.end_time as string)
-
-  const resource = row.resource as Record<string, unknown> | null
+  const tenantId = row.tenant_id as string
 
   return {
-    id:           row.id as string,
-    tenantId:     row.tenant_id as string,
-    resourceId:   (row.resource_id as string) ?? undefined,
-    resource: resource ? {
-      id:       resource.id as string,
-      tenantId: row.tenant_id as string,
-      name:     resource.name as string,
-      type:     (resource.type as ResourceType) ?? 'staff',
-    } : undefined,
+    id:         row.id as string,
+    tenantId,
+    resourceId: (row.resource_id as string) ?? undefined,
+    resource:   toResource(row.resource as Record<string, unknown> | null, tenantId, 'staff'),
+    staff:      toResource(row.staff     as Record<string, unknown> | null, tenantId, 'staff'),
+    location:   toResource(row.location  as Record<string, unknown> | null, tenantId, 'location'),
+    equipment:  toResource(row.equipment as Record<string, unknown> | null, tenantId, 'resource'),
     sessionType: (row.session_type as string) ?? '',
     date,
     startTime,
@@ -40,7 +47,7 @@ export const availabilityService = {
   async getSlots(tenantId: string): Promise<AvailabilitySlot[]> {
     const { data, error } = await supabase
       .from('availability_slots')
-      .select('*, resource:resources(*)')
+      .select('*, resource:resources!resource_id(*), staff:resources!staff_id(*), location:resources!location_id(*), equipment:resources!equipment_id(*)')
       .eq('tenant_id', tenantId)
       .gt('start_time', new Date().toISOString()) // future slots only
       .order('start_time', { ascending: true })
@@ -56,7 +63,7 @@ export const availabilityService = {
   async getAllSlots(tenantId: string): Promise<AvailabilitySlot[]> {
     const { data, error } = await supabase
       .from('availability_slots')
-      .select('*, resource:resources(*)')
+      .select('*, resource:resources!resource_id(*), staff:resources!staff_id(*), location:resources!location_id(*), equipment:resources!equipment_id(*)')
       .eq('tenant_id', tenantId)
       .order('start_time', { ascending: true })
 
@@ -67,7 +74,7 @@ export const availabilityService = {
   async getSlotById(slotId: string): Promise<AvailabilitySlot | null> {
     const { data, error } = await supabase
       .from('availability_slots')
-      .select('*, resource:resources(*)')
+      .select('*, resource:resources!resource_id(*), staff:resources!staff_id(*), location:resources!location_id(*), equipment:resources!equipment_id(*)')
       .eq('id', slotId)
       .single()
 
@@ -81,7 +88,10 @@ export const availabilityService = {
 
     const { error } = await supabase.from('availability_slots').insert({
       tenant_id:    input.tenantId,
-      resource_id:  input.resourceId || null,
+      resource_id:  input.resourceId  || null,
+      staff_id:     input.staffId     || null,
+      location_id:  input.locationId  || null,
+      equipment_id: input.equipmentId || null,
       session_type: input.sessionType,
       start_time:   startTimestamp,
       end_time:     endTimestamp,

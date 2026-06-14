@@ -22,6 +22,8 @@ function uid() {
 const fieldCls = 'w-full border border-border bg-white px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-ink/20 transition'
 
 export default function IntakeBuilder({ questions, onChange }: Props) {
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+
   function add() {
     onChange([...questions, { id: uid(), type: 'text', label: '', required: false }])
   }
@@ -59,69 +61,90 @@ export default function IntakeBuilder({ questions, onChange }: Props) {
   return (
     <div className="flex flex-col gap-3">
       {questions.length === 0 && (
-        <p className="text-sm text-secondary text-center py-4">
+        <p className="text-sm text-secondary text-center py-6 bg-white border border-dashed border-border rounded-[10px]">
           No questions yet. Add one below.
         </p>
       )}
 
       {questions.map((q, i) => (
-        <div key={q.id} className="border border-border bg-white p-4 flex flex-col gap-3">
+        <div key={q.id} className="bg-white border border-border rounded-[10px] overflow-hidden">
 
-          {/* Header: number + delete */}
-          <div className="flex items-center justify-between gap-2">
-            <span className="flex h-6 w-6 items-center justify-center bg-subtle text-xs font-semibold text-secondary shrink-0">
-              {i + 1}
-            </span>
-            <button
-              type="button"
-              onClick={() => remove(q.id)}
-              className="text-secondary hover:text-rose-500 transition-colors p-1"
-              aria-label="Remove question"
-            >
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                <path d="M5 5.5V11M7.5 5.5V11M10 5.5V11M2 3.5h11M6 3.5V2.5a1 1 0 011-1h1a1 1 0 011 1v1M13 3.5l-.8 9a1 1 0 01-1 .9H3.8a1 1 0 01-1-.9L2 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
+          {/* Card header */}
+          <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-white text-[10px] font-bold shrink-0">
+                {i + 1}
+              </span>
+              <span className="text-xs font-medium text-secondary">{TYPE_LABELS[q.type]}</span>
+            </div>
+
+            {confirmDeleteId === q.id ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-secondary">Remove?</span>
+                <button
+                  type="button"
+                  onClick={() => { remove(q.id); setConfirmDeleteId(null) }}
+                  className="text-xs font-semibold text-rose-600 hover:text-rose-700 transition-colors px-1"
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="text-xs text-secondary hover:text-ink transition-colors px-1"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteId(q.id)}
+                className="text-muted hover:text-rose-500 transition-colors p-1 -mr-1"
+                aria-label="Remove question"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M4.5 5V10M7 5V10M9.5 5V10M1.5 3h11M5.5 3V2a1 1 0 011-1h1a1 1 0 011 1v1M12.5 3l-.75 8.5a1 1 0 01-1 .9H3.25a1 1 0 01-1-.9L1.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            )}
           </div>
 
-          {/* Question text */}
-          <input
-            value={q.label}
-            onChange={(e) => update(q.id, { label: e.target.value })}
-            placeholder="e.g. What is your experience level?"
-            className={fieldCls}
-          />
-
-          {/* Type + Required - type full-width, required below */}
-          <div className="flex flex-col gap-2">
-            <select
-              value={q.type}
-              onChange={(e) => update(q.id, {
-                type: e.target.value as IntakeQuestion['type'],
-                options: e.target.value === 'dropdown' ? [''] : undefined,
-              })}
+          {/* Question label */}
+          <div className="px-4 pb-3">
+            <input
+              value={q.label}
+              onChange={(e) => update(q.id, { label: e.target.value })}
+              placeholder="Question text, e.g. What is your experience level?"
               className={fieldCls}
-            >
-              {(Object.keys(TYPE_LABELS) as IntakeQuestion['type'][]).map((t) => (
-                <option key={t} value={t}>{TYPE_LABELS[t]}</option>
-              ))}
-            </select>
+            />
+          </div>
 
-            <label className="flex items-center gap-2 text-sm text-secondary cursor-pointer">
-              <input
-                type="checkbox"
-                checked={q.required}
-                onChange={(e) => update(q.id, { required: e.target.checked })}
-                className="h-4 w-4 border-border"
-              />
-              Required
-            </label>
+          {/* Answer type picker */}
+          <div className="px-4 pb-3 grid grid-cols-2 gap-1.5">
+            {(Object.keys(TYPE_LABELS) as IntakeQuestion['type'][]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => update(q.id, {
+                  type: t,
+                  options: t === 'dropdown' ? (q.options?.length ? q.options : ['']) : undefined,
+                })}
+                className={`py-2 px-3 text-xs font-medium border transition-all text-left rounded-md ${
+                  q.type === t
+                    ? 'bg-ink text-white border-ink'
+                    : 'bg-white text-secondary border-border hover:border-ink/40 hover:text-ink'
+                }`}
+              >
+                {TYPE_LABELS[t]}
+              </button>
+            ))}
           </div>
 
           {/* Dropdown options */}
           {q.type === 'dropdown' && (
-            <div className="flex flex-col gap-2 pt-1">
-              <p className="text-xs font-medium text-secondary uppercase tracking-wide">Options</p>
+            <div className="mx-4 mb-3 border border-border rounded-md p-3 flex flex-col gap-2 bg-subtle/40">
+              <p className="text-xs font-medium text-secondary">Options</p>
               {(q.options ?? []).map((opt, oi) => (
                 <div key={oi} className="flex items-center gap-2">
                   <input
@@ -133,7 +156,7 @@ export default function IntakeBuilder({ questions, onChange }: Props) {
                   <button
                     type="button"
                     onClick={() => removeOption(q.id, oi)}
-                    className="shrink-0 text-secondary hover:text-rose-500 transition-colors p-1"
+                    className="shrink-0 text-muted hover:text-rose-500 transition-colors p-1"
                   >
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                       <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -150,13 +173,28 @@ export default function IntakeBuilder({ questions, onChange }: Props) {
               </button>
             </div>
           )}
+
+          {/* Required toggle */}
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border/60 bg-subtle/30">
+            <span className="text-xs text-secondary">Required</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={q.required}
+              onClick={() => update(q.id, { required: !q.required })}
+              className={`relative shrink-0 h-5 w-9 rounded-full transition-colors focus:outline-none ${q.required ? 'bg-ink' : 'bg-border'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 h-4 w-4 bg-white shadow-sm rounded-full transition-transform ${q.required ? 'translate-x-4' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
         </div>
       ))}
 
       <button
         type="button"
         onClick={add}
-        className="flex items-center justify-center gap-2 border-2 border-dashed border-border px-4 py-3 text-sm text-secondary hover:border-ink/30 hover:text-ink transition-colors w-full"
+        className="flex items-center justify-center gap-2 border-2 border-dashed border-border px-4 py-3.5 text-sm font-medium text-secondary hover:border-ink/30 hover:text-ink transition-colors w-full rounded-[10px]"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>

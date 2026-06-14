@@ -38,12 +38,18 @@ export default function StripeConnect({ tenant }: Props) {
 
   if (tenant.stripeOnboarded) {
     return (
-      <div className="bg-white shadow-sm p-4 sm:p-5 flex items-center justify-between gap-4">
-        <div className="flex flex-col gap-0.5">
-          <p className="text-sm font-medium text-ink">Stripe account</p>
-          <p className="font-mono text-xs text-muted">{tenant.stripeAccountId}</p>
+      <div className="bg-white shadow-sm p-4 sm:p-5 flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1 min-w-0">
+          <p className="text-sm font-semibold text-ink">Stripe</p>
+          <p className="font-mono text-[11px] text-muted truncate">{tenant.stripeAccountId}</p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+              <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Connected
+          </span>
           <button
             type="button"
             onClick={handleDisconnect}
@@ -52,9 +58,6 @@ export default function StripeConnect({ tenant }: Props) {
           >
             {disconnecting ? 'Disconnecting…' : 'Disconnect'}
           </button>
-          <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1">
-            Connected
-          </span>
         </div>
       </div>
     )

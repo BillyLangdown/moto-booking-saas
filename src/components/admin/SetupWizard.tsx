@@ -30,6 +30,7 @@ interface WizSlotPattern {
 }
 
 const STEPS = ['Password', 'Business', 'Services', 'Branding', 'Resources', 'Availability', 'Questions', 'Done'] as const
+const OPTIONAL_STEPS = new Set([2, 3, 4, 5, 6])
 
 const EXAMPLE_QUESTIONS: IntakeQuestion[] = [
   { id: 'ex1', type: 'dropdown', label: 'Experience level', required: true, options: ['Beginner', 'Intermediate', 'Advanced', 'Professional'] },
@@ -350,11 +351,12 @@ export default function SetupWizard({ tenant, userEmail = '' }: Props) {
     <div className="min-h-dvh flex flex-col">
 
       {/* Header + progress */}
-      <div style={{ background: 'linear-gradient(180deg, #0D1117 0%, #1a2644 100%)' }}>
+      <div style={{ background: '#1F2937' }}>
         <div className="mx-auto max-w-xl px-4 pt-5 pb-4">
           <div className="flex items-center gap-2.5 mb-5">
-            <img src="/images/slick-logo.png" alt="Slick" className="h-7 w-auto object-contain" />
-            <span className="text-sm font-semibold text-white">Setup</span>
+            <span className="text-sm font-semibold text-white tracking-[0.18em] uppercase">orla</span>
+            <span className="text-sm text-white/30">·</span>
+            <span className="text-sm text-white/50">Setup</span>
           </div>
           <div className="flex gap-1 mb-2">
             {STEPS.map((_, i) => (
@@ -363,7 +365,9 @@ export default function SetupWizard({ tenant, userEmail = '' }: Props) {
           </div>
           <div className="flex justify-between">
             <span className="text-xs text-white/40">Step {step + 1} of {STEPS.length}</span>
-            <span className="text-xs font-medium text-white/70">{STEPS[step]}</span>
+            <span className="text-xs font-medium text-white/70">
+              {STEPS[step]}{OPTIONAL_STEPS.has(step) ? <span className="text-white/40 font-normal"> (optional)</span> : null}
+            </span>
           </div>
         </div>
       </div>
@@ -435,8 +439,8 @@ export default function SetupWizard({ tenant, userEmail = '' }: Props) {
                 required autoComplete="email" placeholder="bookings@yourbusiness.com"
               />
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-secondary">
-                  Description <span className="normal-case font-normal text-muted">(shown on your booking page)</span>
+                <label className="text-xs font-semibold text-secondary">
+                  Description <span className="font-normal text-muted">(shown on your booking page)</span>
                 </label>
                 <textarea
                   value={description}
@@ -563,7 +567,7 @@ export default function SetupWizard({ tenant, userEmail = '' }: Props) {
                 {availMode === 'recurring' && (
                   <>
                     <div className="flex flex-col gap-2">
-                      <span className="text-xs font-medium text-secondary uppercase tracking-wide">Repeat on</span>
+                      <span className="text-xs font-medium text-secondary">Repeat on</span>
                       <div className="flex gap-1.5 flex-wrap">
                         {AVAIL_DAYS.map((d) => (
                           <button key={d.value} type="button"
@@ -577,11 +581,11 @@ export default function SetupWizard({ tenant, userEmail = '' }: Props) {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium text-secondary uppercase tracking-wide">From</label>
+                        <label className="text-xs font-medium text-secondary">From</label>
                         <input type="date" value={availFrom} onChange={(e) => setAvailFrom(e.target.value)} className={inputClass} />
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium text-secondary uppercase tracking-wide">Until</label>
+                        <label className="text-xs font-medium text-secondary">Until</label>
                         <input type="date" value={availUntil} min={availFrom} onChange={(e) => setAvailUntil(e.target.value)} className={inputClass} />
                       </div>
                     </div>
@@ -590,23 +594,23 @@ export default function SetupWizard({ tenant, userEmail = '' }: Props) {
 
                 {availMode === 'once' && (
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-secondary uppercase tracking-wide">Date</label>
+                    <label className="text-xs font-medium text-secondary">Date</label>
                     <input type="date" value={availDate} min={new Date().toISOString().split('T')[0]} onChange={(e) => setAvailDate(e.target.value)} className={inputClass} />
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-secondary uppercase tracking-wide">Start</label>
+                    <label className="text-xs font-medium text-secondary">Start</label>
                     <input type="time" value={availStart} onChange={(e) => setAvailStart(e.target.value)} className={inputClass} />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-secondary uppercase tracking-wide">End</label>
+                    <label className="text-xs font-medium text-secondary">End</label>
                     <input type="time" value={availEnd} onChange={(e) => setAvailEnd(e.target.value)} className={inputClass} />
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-secondary uppercase tracking-wide">Capacity (spots per slot)</label>
+                  <label className="text-xs font-medium text-secondary">Capacity (spots per slot)</label>
                   <input
                     type="number" min={1} placeholder="1"
                     value={capacityRaw}
@@ -617,7 +621,7 @@ export default function SetupWizard({ tenant, userEmail = '' }: Props) {
                 </div>
 
                 <div className="border-t border-border/50 pt-4 flex flex-col gap-3">
-                  <p className="text-xs font-medium text-secondary uppercase tracking-wide">Refine (optional)</p>
+                  <p className="text-xs font-medium text-secondary">Refine (optional)</p>
 
                   {sessionTypes.length > 0 && (
                     <div className="flex flex-col gap-1.5">
@@ -772,13 +776,13 @@ export default function SetupWizard({ tenant, userEmail = '' }: Props) {
             </div>
             <div className="w-full bg-white shadow-sm p-4 text-left flex flex-col gap-3">
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-wide text-secondary">Your booking link</span>
+                <span className="text-xs font-medium text-secondary">Your booking link</span>
                 <span className="font-mono text-sm text-accent break-all">
                   {typeof window !== 'undefined' ? window.location.origin : ''}/book/{tenant.slug}
                 </span>
               </div>
               <div className="border-t border-border/50 pt-3 flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-wide text-secondary">Next step</span>
+                <span className="text-xs font-medium text-secondary">Next step</span>
                 <p className="text-sm text-secondary">Go to <strong className="text-ink">Availability</strong> to add your first bookable slots.</p>
               </div>
             </div>

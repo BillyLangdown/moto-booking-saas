@@ -61,6 +61,9 @@ export interface AvailabilitySlot {
   tenantId: TenantId
   resourceId?: string
   resource?: Resource
+  staff?: Resource
+  location?: Resource
+  equipment?: Resource
   sessionType: SessionType
   date: string
   startTime: string
@@ -86,12 +89,16 @@ export interface Booking {
   endTimeIso?: string
   resourceName?: string
   stripePaymentIntentId?: string
+  paymentAuthorizedAt?: string
   amountPaid?: number
 }
 
 export interface CreateSlotInput {
   tenantId: TenantId
   resourceId?: string
+  staffId?: string
+  locationId?: string
+  equipmentId?: string
   sessionType: SessionType
   date: string
   startTime: string

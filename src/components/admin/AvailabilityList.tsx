@@ -1,37 +1,30 @@
-import type { AvailabilitySlot } from '@/types'
-import Badge from '@/components/ui/Badge'
+import type { AvailabilitySlot, Resource } from '@/types'
 import DeleteSlotButton from '@/components/admin/DeleteSlotButton'
 
-interface Props {
-  slots: AvailabilitySlot[]
-}
+interface Props { slots: AvailabilitySlot[] }
 
 function formatDateHeading(isoDate: string): string {
-  return new Date(`${isoDate}T00:00:00`).toLocaleDateString('en-GB', {
-    weekday: 'short', day: 'numeric', month: 'short',
-  })
+  const d        = new Date(`${isoDate}T00:00:00`)
+  const today    = new Date()
+  const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1)
+  if (d.toDateString() === today.toDateString())    return 'Today'
+  if (d.toDateString() === tomorrow.toDateString()) return 'Tomorrow'
+  return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
 }
 
-function CapacityBar({ booked, capacity }: { booked: number; capacity: number }) {
-  const pct = Math.round((booked / capacity) * 100)
-  const colour =
-    pct >= 100 ? 'bg-rose-400' : pct >= 50 ? 'bg-amber-400' : 'bg-green-400'
-
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-20 rounded-full bg-border overflow-hidden">
-        <div className={`h-full rounded-full ${colour}`} style={{ width: `${Math.min(pct, 100)}%` }} />
-      </div>
-      <span className="text-xs text-secondary">{booked}/{capacity}</span>
-    </div>
-  )
+function slotResources(slot: AvailabilitySlot): Resource[] {
+  const items: (Resource | undefined)[] = [slot.staff, slot.location, slot.equipment]
+  const named = items.filter(Boolean) as Resource[]
+  if (named.length > 0) return named
+  return slot.resource ? [slot.resource] : []
 }
 
 export default function AvailabilityList({ slots }: Props) {
   if (slots.length === 0) {
     return (
-      <div className="bg-white shadow-sm py-16 text-center">
-        <p className="text-sm text-secondary">No availability slots configured.</p>
+      <div className="py-14 text-center">
+        <p className="text-sm text-secondary">No slots here.</p>
+        <p className="text-xs text-muted mt-1">Use the button above to schedule availability.</p>
       </div>
     )
   }
@@ -43,37 +36,55 @@ export default function AvailabilityList({ slots }: Props) {
   }, {})
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       {Object.entries(grouped)
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([date, dateSlots]) => (
-          <div key={date} className="bg-white shadow-sm overflow-hidden">
-            <div className="border-b border-border bg-subtle px-5 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
+          <div key={date}>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-[11px] font-medium uppercase tracking-widest shrink-0 text-muted">
                 {formatDateHeading(date)}
-              </p>
+              </span>
+              <div className="flex-1 h-px bg-border/50" />
             </div>
-            <ul className="divide-y divide-border">
-              {dateSlots.map((slot) => (
-                <li key={slot.id} className="px-5 py-3.5 flex items-center gap-4 flex-wrap">
-                  <Badge variant="session" value={slot.sessionType} />
-                  <span className="text-sm text-ink font-medium">
-                    {slot.startTime} – {slot.endTime}
-                  </span>
-                  {slot.resource && <span className="text-sm text-secondary">{slot.resource.name}</span>}
-                  <CapacityBar booked={slot.booked} capacity={slot.capacity} />
-                  {slot.booked >= slot.capacity && (
-                    <span className="text-xs font-medium text-rose-600">Full</span>
-                  )}
-                  {slot.booked < slot.capacity && (
-                    <span className="text-xs text-green-600">
-                      {slot.capacity - slot.booked} available
-                    </span>
-                  )}
-                  <DeleteSlotButton slotId={slot.id} hasBookings={slot.booked > 0} />
-                </li>
-              ))}
-            </ul>
+
+            <div className="flex flex-col gap-2">
+              {dateSlots
+                .sort((a, b) => a.startTime < b.startTime ? -1 : 1)
+                .map(slot => {
+                  const isFull = slot.booked >= slot.capacity
+                  const resources = slotResources(slot)
+                  return (
+                    <div
+                      key={slot.id}
+                      className="flex items-center gap-3 bg-card border border-border/70 rounded-xl px-4 py-3.5"
+                    >
+                      {/* Time */}
+                      <span className="text-sm font-semibold tabular-nums text-ink shrink-0 w-[104px]">
+                        {slot.startTime}
+                        <span className="text-muted font-normal"> – {slot.endTime}</span>
+                      </span>
+
+                      {/* Service + resources */}
+                      <div className="flex-1 min-w-0 text-sm text-secondary truncate">
+                        {[
+                          slot.sessionType || null,
+                          ...resources.map(r => r.name),
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </div>
+
+                      {/* Capacity */}
+                      <span className={`text-xs tabular-nums shrink-0 ${isFull ? 'text-muted line-through' : 'text-muted'}`}>
+                        {slot.booked}/{slot.capacity}
+                      </span>
+
+                      <DeleteSlotButton slotId={slot.id} hasBookings={slot.booked > 0} />
+                    </div>
+                  )
+                })}
+            </div>
           </div>
         ))}
     </div>

@@ -25,7 +25,7 @@ function formatCreated(iso: string) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-muted">{title}</p>
+      <p className="text-xs font-semibold text-secondary">{title}</p>
       {children}
     </div>
   )
@@ -69,26 +69,15 @@ export default function BookingDrawer({ booking, onClose }: Props) {
       <div
         role="dialog"
         aria-modal="true"
-        className={`fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out sm:w-[440px] ${open ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out sm:w-[440px] sm:rounded-l-xl ${open ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Header */}
-        <div className="flex shrink-0 items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-border">
-          <div className="flex flex-col gap-2 min-w-0">
-            <p className="text-lg font-bold text-ink leading-tight truncate">{booking?.name}</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              {booking && <Badge variant="status" value={booking.status} />}
-              {booking && <Badge variant="session" value={booking.sessionType} />}
-            </div>
+        <div className="flex shrink-0 flex-col gap-2 px-6 pt-5 pb-4 border-b border-border">
+          <p className="text-lg font-bold text-ink leading-tight truncate">{booking?.name}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {booking && <Badge variant="status" value={booking.status} />}
+            {booking && <Badge variant="session" value={booking.sessionType} />}
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="mt-1 shrink-0 flex h-8 w-8 items-center justify-center rounded-full text-secondary hover:bg-subtle hover:text-ink transition-colors"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-            </svg>
-          </button>
         </div>
 
         {/* Body */}
@@ -152,48 +141,61 @@ export default function BookingDrawer({ booking, onClose }: Props) {
           )}
         </div>
 
-        {/* Footer actions */}
-        {booking && !isCancelled && (
-          <div className="shrink-0 border-t border-border px-6 py-4 flex flex-col gap-3">
-            {booking.status === 'pending' && (
-              <button
-                disabled={confirming}
-                onClick={() => startConfirm(async () => { await confirmBookingAction(booking.id); onClose() })}
-                className="w-full rounded-xl bg-accent py-3 text-sm font-semibold text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
-              >
-                {confirming ? 'Confirming…' : 'Confirm booking'}
-              </button>
-            )}
+        {/* Footer: actions + close bar */}
+        <div className="shrink-0 border-t border-border">
+          {booking && !isCancelled && (
+            <div className="px-6 py-4 flex flex-col gap-3">
+              {booking.status === 'pending' && (
+                <button
+                  disabled={confirming}
+                  onClick={() => startConfirm(async () => { await confirmBookingAction(booking.id); onClose() })}
+                  className="w-full rounded-xl bg-accent py-3 text-sm font-semibold text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
+                >
+                  {confirming ? 'Confirming…' : 'Confirm booking'}
+                </button>
+              )}
 
-            {!confirmCancel ? (
-              <button
-                onClick={() => setConfirmCancel(true)}
-                className="w-full rounded-xl border border-border py-2.5 text-sm font-medium text-secondary hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 transition-colors"
-              >
-                Cancel booking
-              </button>
-            ) : (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 flex flex-col gap-2">
-                <p className="text-sm font-medium text-rose-700 text-center">Cancel this booking?</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setConfirmCancel(false)}
-                    className="flex-1 rounded-lg border border-border bg-white py-2 text-sm font-medium text-secondary hover:text-ink transition-colors"
-                  >
-                    Keep it
-                  </button>
-                  <button
-                    disabled={cancelling}
-                    onClick={() => startCancel(async () => { await cancelBookingAction(booking.id); onClose() })}
-                    className="flex-1 rounded-lg bg-rose-600 py-2 text-sm font-semibold text-white hover:bg-rose-700 transition-colors disabled:opacity-50"
-                  >
-                    {cancelling ? 'Cancelling…' : 'Yes, cancel'}
-                  </button>
+              {!confirmCancel ? (
+                <button
+                  onClick={() => setConfirmCancel(true)}
+                  className="w-full rounded-xl border border-border py-2.5 text-sm font-medium text-secondary hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                >
+                  Cancel booking
+                </button>
+              ) : (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 flex flex-col gap-2">
+                  <p className="text-sm font-medium text-rose-700 text-center">Cancel this booking?</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setConfirmCancel(false)}
+                      className="flex-1 rounded-lg border border-border bg-white py-2 text-sm font-medium text-secondary hover:text-ink transition-colors"
+                    >
+                      Keep it
+                    </button>
+                    <button
+                      disabled={cancelling}
+                      onClick={() => startCancel(async () => { await cancelBookingAction(booking.id); onClose() })}
+                      className="flex-1 rounded-lg bg-rose-600 py-2 text-sm font-semibold text-white hover:bg-rose-700 transition-colors disabled:opacity-50"
+                    >
+                      {cancelling ? 'Cancelling…' : 'Yes, cancel'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+
+          {/* Bottom-anchored close bar */}
+          <button
+            onClick={onClose}
+            className={`w-full py-3.5 text-sm font-medium text-secondary hover:text-ink hover:bg-subtle/60 transition-colors flex items-center justify-center gap-2 ${booking && !isCancelled ? 'border-t border-border/50' : ''}`}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M11 3L3 11M3 3l8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+            </svg>
+            Close
+          </button>
+        </div>
       </div>
     </>
   )

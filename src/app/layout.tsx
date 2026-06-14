@@ -1,15 +1,18 @@
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
 
+const inter = Inter({ subsets: ['latin'] })
+
 export const metadata: Metadata = {
-  title: 'Slick',
-  description: 'Simple online booking for your business.',
+  title: 'Orla',
+  description: 'The calm system that keeps your business in order.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-GB" suppressHydrationWarning>
-      <body>{children}</body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }

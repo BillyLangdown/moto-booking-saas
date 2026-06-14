@@ -50,7 +50,7 @@ export default function BookingTable({ bookings, onSelect }: Props) {
           <div key={date} className="bg-white shadow-sm overflow-hidden">
             {/* Date heading */}
             <div className="border-b border-border bg-subtle px-5 py-3 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
+              <p className="text-xs font-semibold text-secondary">
                 {formatDateHeading(date)}
               </p>
               <p className="text-xs text-muted">

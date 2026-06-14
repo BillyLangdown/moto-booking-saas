@@ -23,15 +23,16 @@ export async function createConnectAccountLink(
 }
 
 export async function createCheckoutSession(opts: {
-  bookingId:       string
-  tenantId:        string
-  stripeAccountId: string
+  bookingId:        string
+  tenantId:         string
+  stripeAccountId:  string
   amountInSmallest: number
-  currency:        string
-  label:           string
-  customerEmail:   string
-  cancelUrl:       string
-  appUrl:          string
+  currency:         string
+  label:            string
+  customerEmail:    string
+  cancelUrl:        string
+  appUrl:           string
+  captureMethod:    'automatic' | 'manual'
 }): Promise<string> {
   const session = await stripe.checkout.sessions.create(
     {
@@ -48,13 +49,40 @@ export async function createCheckoutSession(opts: {
       customer_email: opts.customerEmail,
       success_url:    `${opts.appUrl}/payment/success?booking_id=${opts.bookingId}`,
       cancel_url:     opts.cancelUrl,
+      payment_intent_data: {
+        capture_method: opts.captureMethod,
+      },
       metadata: {
-        booking_id: opts.bookingId,
-        tenant_id:  opts.tenantId,
+        booking_id:   opts.bookingId,
+        tenant_id:    opts.tenantId,
+        capture_mode: opts.captureMethod,
       },
     },
     { stripeAccount: opts.stripeAccountId },
   )
   if (!session.url) throw new Error('No checkout URL returned from Stripe')
   return session.url
+}
+
+export async function capturePaymentIntent(
+  paymentIntentId: string,
+  stripeAccountId: string,
+): Promise<number> {
+  const pi = await stripe.paymentIntents.capture(
+    paymentIntentId,
+    {},
+    { stripeAccount: stripeAccountId },
+  )
+  return pi.amount_received
+}
+
+export async function cancelPaymentIntent(
+  paymentIntentId: string,
+  stripeAccountId: string,
+): Promise<void> {
+  await stripe.paymentIntents.cancel(
+    paymentIntentId,
+    {},
+    { stripeAccount: stripeAccountId },
+  )
 }

@@ -12,6 +12,8 @@ interface Props {
   intakeQuestions: IntakeQuestion[]
   onBack: () => void
   onSuccess: (booking: Booking) => void
+  price?: { label: string; sub?: string }
+  hideHeader?: boolean
 }
 
 function IntakeField({
@@ -23,14 +25,14 @@ function IntakeField({
   value: string
   onChange: (v: string) => void
 }) {
-  const inputClass = 'w-full border border-border bg-white px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent transition'
+  const inputClass = 'w-full border border-border bg-white px-3.5 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 transition rounded-md'
 
   if (question.type === 'dropdown') {
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-ink">
           {question.label}
-          {question.required && <span className="text-rose-500 ml-0.5">*</span>}
+          {question.required && <span className="text-rose-400 ml-0.5">*</span>}
         </label>
         <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
           <option value="">Select…</option>
@@ -47,7 +49,7 @@ function IntakeField({
       <div className="flex flex-col gap-2">
         <p className="text-sm font-medium text-ink">
           {question.label}
-          {question.required && <span className="text-rose-500 ml-0.5">*</span>}
+          {question.required && <span className="text-rose-400 ml-0.5">*</span>}
         </p>
         <div className="flex gap-2">
           {['Yes', 'No'].map((opt) => (
@@ -55,10 +57,10 @@ function IntakeField({
               key={opt}
               type="button"
               onClick={() => onChange(opt.toLowerCase())}
-              className={`flex-1 border-2 py-2.5 text-sm font-medium transition-all ${
+              className={`flex-1 border rounded-md py-3 text-sm font-medium transition-all ${
                 value === opt.toLowerCase()
-                  ? 'border-accent bg-accent/5 text-accent'
-                  : 'border-border text-secondary hover:border-secondary'
+                  ? 'border-accent bg-accent/8 text-accent'
+                  : 'border-border text-secondary hover:border-secondary bg-white'
               }`}
             >
               {opt}
@@ -70,23 +72,23 @@ function IntakeField({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <label className="text-sm font-medium text-ink">
         {question.label}
-        {question.required && <span className="text-rose-500 ml-0.5">*</span>}
+        {question.required && <span className="text-rose-400 ml-0.5">*</span>}
       </label>
       <input
         type={question.type === 'number' ? 'number' : 'text'}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={inputClass}
-        placeholder={question.type === 'number' ? '0' : 'Your answer…'}
+        placeholder={question.type === 'number' ? '0' : ''}
       />
     </div>
   )
 }
 
-export default function BookingForm({ slot, tenantId, intakeQuestions, onBack, onSuccess }: Props) {
+export default function BookingForm({ slot, tenantId, intakeQuestions, onBack, onSuccess, price, hideHeader = false }: Props) {
   const [name, setName]   = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -151,37 +153,44 @@ export default function BookingForm({ slot, tenantId, intakeQuestions, onBack, o
   })
 
   return (
-    <div className="flex flex-col gap-6">
-      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-secondary hover:text-ink transition-colors w-fit">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        Back
-      </button>
+    <div className="flex flex-col gap-7">
+      {!hideHeader && (
+        <>
+          <div className="flex items-center justify-between">
+            <button onClick={onBack} className="flex items-center gap-1.5 text-xs text-secondary hover:text-ink transition-colors">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Back
+            </button>
+          </div>
 
-      {/* Selected slot */}
-      <div className="bg-white shadow-sm p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-secondary mb-2">Your session</p>
-        <p className="text-base font-semibold text-ink">{slotDate}</p>
-        <p className="text-sm text-secondary mt-0.5">{slot.startTime} – {slot.endTime}{slot.resource ? ` · ${slot.resource.name}` : ''}</p>
-      </div>
+          <div className="bg-accent/8 border border-accent/15 rounded-lg px-4 py-3 flex items-center gap-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-accent">{slotDate}</p>
+              <p className="text-xs text-accent/70 mt-0.5">{slot.startTime} – {slot.endTime}{slot.resource ? ` · ${slot.resource.name}` : ''}</p>
+            </div>
+          </div>
+        </>
+      )}
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-        {/* Intake questions */}
         {intakeQuestions.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <p className="text-sm font-semibold text-ink">A few quick questions</p>
+          <div className="flex flex-col gap-5">
+            <p className="text-sm font-medium text-ink">A few quick questions</p>
             {intakeQuestions.map((q) => (
               <div key={q.id}>
                 <IntakeField question={q} value={answers[q.id] ?? ''} onChange={(v) => setAnswer(q.id, v)} />
-                {errors[q.id] && <p className="text-xs text-rose-600 mt-1">{errors[q.id]}</p>}
+                {errors[q.id] && <p className="text-xs text-rose-500 mt-1.5">{errors[q.id]}</p>}
               </div>
             ))}
           </div>
         )}
 
-        {/* Contact details */}
         <div className="flex flex-col gap-4">
           {intakeQuestions.length > 0 && (
-            <p className="text-sm font-semibold text-ink border-t border-border pt-4">Your details</p>
+            <div className="border-t border-border pt-5">
+              <p className="text-sm font-medium text-ink">Your details</p>
+            </div>
           )}
           <Input
             label="Full name"
@@ -203,7 +212,7 @@ export default function BookingForm({ slot, tenantId, intakeQuestions, onBack, o
             placeholder="jane@example.com"
           />
           <Input
-            label="Phone number (optional)"
+            label="Phone (optional)"
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -213,15 +222,35 @@ export default function BookingForm({ slot, tenantId, intakeQuestions, onBack, o
         </div>
 
         {serverError && (
-          <p className="bg-rose-50 border border-rose-100 px-3 py-2.5 text-sm text-rose-700">
+          <p className="bg-rose-50 border border-rose-100 rounded-md px-4 py-3 text-sm text-rose-600">
             {serverError}
           </p>
         )}
-        <Button type="submit" loading={submitting || redirecting} size="lg" className="w-full">
-          {redirecting ? 'Redirecting to payment…' : 'Confirm booking'}
-        </Button>
-        <p className="text-xs text-secondary text-center">
-          You&apos;ll receive a confirmation email once your booking is placed.
+
+        <div className="flex flex-col gap-3 pt-1">
+          <Button type="submit" loading={submitting || redirecting} size="lg" className="w-full">
+            {redirecting
+              ? 'Redirecting to payment…'
+              : price
+                ? `Pay ${price.label}`
+                : 'Confirm booking'}
+          </Button>
+          {price?.sub && (
+            <p className="text-xs text-muted text-center">{price.sub} total</p>
+          )}
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-sm text-secondary hover:text-ink transition-colors text-center py-1"
+          >
+            Back to times
+          </button>
+        </div>
+
+        <p className="text-xs text-muted text-center">
+          {price
+            ? 'You\'ll be taken to a secure payment page after confirming.'
+            : 'A confirmation email will be sent once your booking is placed.'}
         </p>
       </form>
     </div>

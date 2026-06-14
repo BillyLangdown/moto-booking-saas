@@ -26,7 +26,7 @@ export default function BookingPageLink({ slug, variant = 'compact' }: Props) {
   if (variant === 'full') {
     return (
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-secondary">Booking page</p>
+        <p className="text-xs font-semibold text-secondary">Booking page</p>
         <div className="flex items-center gap-2 bg-subtle border border-border px-3 py-2">
           <span className="font-mono text-xs text-ink break-all flex-1">/book/{slug}</span>
           <div className="flex items-center gap-1.5 shrink-0">

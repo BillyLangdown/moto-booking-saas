@@ -34,7 +34,7 @@ export default function Button({
     <button
       disabled={disabled || loading}
       className={[
-        'inline-flex items-center justify-center gap-2 font-medium transition-colors rounded-[2px]',
+        'inline-flex items-center justify-center gap-2 font-medium transition-colors rounded-md',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         VARIANTS[variant],
         SIZES[size],

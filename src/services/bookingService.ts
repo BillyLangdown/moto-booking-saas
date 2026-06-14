@@ -37,6 +37,7 @@ function mapBooking(row: Record<string, unknown>): Booking {
     startTimeIso: startIso ?? undefined,
     endTimeIso:   endIso   ?? undefined,
     stripePaymentIntentId: (row.stripe_payment_intent_id as string) ?? undefined,
+    paymentAuthorizedAt:   (row.payment_authorized_at as string) ?? undefined,
     amountPaid:            (row.amount_paid as number) ?? undefined,
   }
 }

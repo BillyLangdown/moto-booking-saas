@@ -52,7 +52,7 @@ function durationLabel(start: string, end: string): string {
 }
 
 const field = 'w-full border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-ink/20 transition'
-const lbl   = 'text-xs font-medium text-secondary uppercase tracking-wide'
+const lbl   = 'text-xs font-medium text-secondary'
 
 interface Props {
   tenantId: string
@@ -68,11 +68,17 @@ export default function SlotCreateForm({ tenantId, resources, sessionTypes = [],
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
 
-  const [resourceId, setResourceId] = useState('')
+  const staffItems     = resources.filter(r => r.type === 'staff')
+  const locationItems  = resources.filter(r => r.type === 'location')
+  const equipmentItems = resources.filter(r => r.type === 'resource')
+
+  const [staffId, setStaffId]         = useState('')
+  const [locationId, setLocationId]   = useState('')
+  const [equipmentId, setEquipmentId] = useState('')
   const [sessionType, setSessionType] = useState(sessionTypes[0] ?? '')
-  const [startTime, setStartTime]   = useState('09:00')
-  const [endTime, setEndTime]       = useState('17:00')
-  const [capacity, setCapacity]     = useState(1)
+  const [startTime, setStartTime]     = useState('09:00')
+  const [endTime, setEndTime]         = useState('17:00')
+  const [capacity, setCapacity]       = useState(1)
 
   // One-off
   const [date, setDate]           = useState(todayStr())
@@ -93,10 +99,10 @@ export default function SlotCreateForm({ tenantId, resources, sessionTypes = [],
   const duration   = durationLabel(startTime, endTime)
 
   function buildInputs(): CreateSlotInput[] {
-    const base = { tenantId, resourceId, sessionType, startTime, endTime, capacity }
+    const base = { tenantId, staffId, locationId, equipmentId, sessionType, startTime, endTime, capacity }
     if (mode === 'once') {
-      const sel     = new Date(date + 'T12:00:00')
-      const selDay  = sel.getDay()
+      const sel       = new Date(date + 'T12:00:00')
+      const selDay    = sel.getDay()
       const monOffset = (selDay + 6) % 7
       const weekMon   = new Date(sel)
       weekMon.setDate(weekMon.getDate() - monOffset)
@@ -128,6 +134,8 @@ export default function SlotCreateForm({ tenantId, resources, sessionTypes = [],
     router.refresh()
   }
 
+  const hasResources = staffItems.length > 0 || locationItems.length > 0 || equipmentItems.length > 0
+
   return (
     <>
       <button
@@ -153,41 +161,63 @@ export default function SlotCreateForm({ tenantId, resources, sessionTypes = [],
               <button onClick={close} className="text-secondary hover:text-ink transition-colors w-6 h-6 flex items-center justify-center text-xl leading-none">×</button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-border shrink-0">
+            {/* Tabs — underline uses an absolutely-positioned div to avoid button border-radius curving the line */}
+            <div className="relative flex border-b border-border shrink-0">
               {(['once', 'recurring'] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setMode(m)}
+                  style={{ borderRadius: 0 }}
                   className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
-                    mode === m ? 'text-ink border-b-2 border-ink -mb-px bg-white' : 'text-secondary hover:text-ink'
+                    mode === m ? 'text-ink' : 'text-secondary hover:text-ink'
                   }`}
                 >
                   {m === 'once' ? 'One-off' : 'Recurring'}
                 </button>
               ))}
+              <div
+                className="absolute bottom-0 h-[2px] bg-ink transition-all duration-200"
+                style={{ width: '50%', left: mode === 'once' ? '0%' : '50%' }}
+              />
             </div>
 
             {/* Body */}
             <div className="overflow-y-auto flex-1 px-5 py-5 flex flex-col gap-4">
 
-              {/* Resource - optional, grouped by type */}
-              {resources.length > 0 && (
-                <div className="flex flex-col gap-1.5">
-                  <label className={lbl}>Assign to <span className="normal-case font-normal text-muted">(optional)</span></label>
-                  <select value={resourceId} onChange={(e) => setResourceId(e.target.value)} className={field}>
-                    <option value="">No assignment</option>
-                    {(['staff', 'location', 'resource'] as const).map((type) => {
-                      const items = resources.filter((r) => r.type === type)
-                      if (!items.length) return null
-                      const groupLabel = type === 'staff' ? 'Staff' : type === 'location' ? 'Locations' : 'Resources'
-                      return (
-                        <optgroup key={type} label={groupLabel}>
-                          {items.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                        </optgroup>
-                      )
-                    })}
-                  </select>
+              {/* Assign to — three separate selects, only shown if resources of that type exist */}
+              {hasResources && (
+                <div className="flex flex-col gap-3">
+                  <span className={lbl}>Assign to <span className="normal-case font-normal text-muted">(optional)</span></span>
+
+                  {staffItems.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] text-muted uppercase tracking-wide">Staff</label>
+                      <select value={staffId} onChange={(e) => setStaffId(e.target.value)} className={field}>
+                        <option value="">None</option>
+                        {staffItems.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {locationItems.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] text-muted uppercase tracking-wide">Location</label>
+                      <select value={locationId} onChange={(e) => setLocationId(e.target.value)} className={field}>
+                        <option value="">None</option>
+                        {locationItems.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {equipmentItems.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] text-muted uppercase tracking-wide">Equipment</label>
+                      <select value={equipmentId} onChange={(e) => setEquipmentId(e.target.value)} className={field}>
+                        <option value="">None</option>
+                        {equipmentItems.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -298,7 +328,7 @@ export default function SlotCreateForm({ tenantId, resources, sessionTypes = [],
               )}
 
               {/* Preview */}
-              {resources.length > 0 && slotCount > 0 && (
+              {slotCount > 0 && (
                 <div className="flex items-center gap-2 bg-subtle border border-border px-3 py-2.5 text-xs text-secondary">
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
                     <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2"/>

@@ -8,7 +8,7 @@ import { tenantService } from '@/services/tenantService'
 import { resourceService } from '@/services/resourceService'
 import { adminSupabase } from '@/lib/supabase/admin'
 import { sendBookingConfirmation, sendAdminNotification, sendPaymentLink } from '@/lib/email'
-import { stripe, createCheckoutSession } from '@/lib/stripe'
+import { stripe, createCheckoutSession, capturePaymentIntent, cancelPaymentIntent } from '@/lib/stripe'
 import type { Booking, CreateBookingInput, CreateSlotInput, IntakeQuestion, PaymentMode, SessionTypePrices, UpdateTenantInput } from '@/types'
 
 function getPaymentAmount(
@@ -53,19 +53,19 @@ export async function createBookingAction(
       : 0
     const needsPayment = amount > 0 && !!tenant?.stripeOnboarded && !!tenant?.stripeAccountId
 
+    // auto-confirm + payment → capture immediately; manual confirm + payment → authorize only
+    const captureMethod = autoConfirm ? 'automatic' : 'manual'
+
     // When payment is required booking stays pending until Stripe webhook confirms it
     const status = autoConfirm && !needsPayment ? 'confirmed' : 'pending'
     const booking = await bookingService.createBooking({ ...input, status })
 
-    if (tenant) {
+    // For manual-capture flow the webhook sends the admin notification after card authorization
+    if (tenant && !(needsPayment && !autoConfirm)) {
       await sendAdminNotification(booking, input.startTime, input.endTime, tenant)
     }
 
     if (needsPayment && tenant) {
-      const account = await stripe.accounts.retrieve(tenant.stripeAccountId!)
-      if (!account.charges_enabled) {
-        return { error: 'Payments are not available for this business yet. Please contact them directly.' }
-      }
       const checkoutUrl = await createCheckoutSession({
         bookingId:        booking.id,
         tenantId:         booking.tenantId,
@@ -76,6 +76,7 @@ export async function createBookingAction(
         customerEmail:    booking.email,
         cancelUrl:        `${appUrl}/book/${tenant.slug}`,
         appUrl,
+        captureMethod,
       })
       return { checkoutUrl }
     }
@@ -92,6 +93,17 @@ export async function createBookingAction(
 
 export async function cancelBookingAction(bookingId: string): Promise<{ error?: string }> {
   try {
+    const booking = await bookingService.getBookingById(bookingId)
+    if (booking?.stripePaymentIntentId && booking.status !== 'confirmed' && booking.status !== 'cancelled') {
+      const tenant = await tenantService.getTenantById(booking.tenantId)
+      if (tenant?.stripeAccountId) {
+        try {
+          await cancelPaymentIntent(booking.stripePaymentIntentId, tenant.stripeAccountId)
+        } catch {
+          // non-fatal — Stripe auto-releases uncaptured holds after 7 days
+        }
+      }
+    }
     await bookingService.cancelBooking(bookingId)
     revalidatePath('/dashboard/bookings')
     return {}
@@ -111,10 +123,27 @@ export async function confirmBookingAction(bookingId: string): Promise<{ error?:
       : 0
     const needsPayment = amount > 0 && !!tenant?.stripeOnboarded && !!tenant?.stripeAccountId
 
-    if (needsPayment && tenant) {
-      const account = await stripe.accounts.retrieve(tenant.stripeAccountId!)
-      if (!account.charges_enabled) throw new Error('Stripe account not fully activated')
-      // Don't mark confirmed yet - send payment link, webhook confirms after payment
+    if (needsPayment && pendingBooking.stripePaymentIntentId && tenant?.stripeAccountId) {
+      // Card was already authorized (manual capture flow) — capture the hold now
+      const amountReceived = await capturePaymentIntent(
+        pendingBooking.stripePaymentIntentId,
+        tenant.stripeAccountId,
+      )
+      const booking = await bookingService.confirmBooking(bookingId)
+      await adminSupabase
+        .from('bookings')
+        .update({ amount_paid: amountReceived })
+        .eq('id', bookingId)
+      try {
+        const times = await resolveBookingTimes(booking)
+        if (tenant && times) {
+          await sendBookingConfirmation(booking, times.startTime, times.endTime, tenant)
+        }
+      } catch {
+        // email failures are non-fatal
+      }
+    } else if (needsPayment && tenant) {
+      // No authorized PI yet — send payment link, webhook confirms after payment
       const checkoutUrl = await createCheckoutSession({
         bookingId:        bookingId,
         tenantId:         pendingBooking.tenantId,
@@ -125,6 +154,7 @@ export async function confirmBookingAction(bookingId: string): Promise<{ error?:
         customerEmail:    pendingBooking.email,
         cancelUrl:        `${appUrl}/book/${tenant.slug}`,
         appUrl,
+        captureMethod:    'automatic',
       })
       await adminSupabase
         .from('bookings')

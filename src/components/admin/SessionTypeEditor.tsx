@@ -10,6 +10,7 @@ interface Props {
 
 export default function SessionTypeEditor({ types, onChange, suggestions = [] }: Props) {
   const [input, setInput] = useState('')
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
 
   function add(val: string) {
     const trimmed = val.trim()
@@ -53,13 +54,33 @@ export default function SessionTypeEditor({ types, onChange, suggestions = [] }:
           {types.map((t) => (
             <div key={t} className="flex items-center justify-between py-2.5">
               <span className="text-sm text-ink">{t}</span>
-              <button
-                type="button"
-                onClick={() => remove(t)}
-                className="text-xs text-secondary hover:text-rose-500 transition-colors ml-4 shrink-0"
-              >
-                Remove
-              </button>
+              {confirmRemove === t ? (
+                <div className="flex items-center gap-2 shrink-0 ml-4">
+                  <span className="text-xs text-secondary">Remove?</span>
+                  <button
+                    type="button"
+                    onClick={() => { remove(t); setConfirmRemove(null) }}
+                    className="text-xs font-semibold text-rose-600 hover:text-rose-700 transition-colors px-1"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmRemove(null)}
+                    className="text-xs text-secondary hover:text-ink transition-colors px-1"
+                  >
+                    No
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmRemove(t)}
+                  className="text-xs text-secondary hover:text-rose-500 transition-colors ml-4 shrink-0"
+                >
+                  Remove
+                </button>
+              )}
             </div>
           ))}
         </div>
