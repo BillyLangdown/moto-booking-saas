@@ -12,7 +12,7 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
   const [textInput, setTextInput] = useState('')
   const [answer, setAnswer] = useState('')
   const [error, setError] = useState('')
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recognitionRef = useRef<unknown>(null)
   const transcriptRef = useRef('')
 
   async function submitQuery(query: string) {
@@ -47,15 +47,18 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
     setAnswer('')
     setError('')
 
-    const recognition = new SR() as SpeechRecognition
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recognition = new SR() as any
     recognition.continuous = false
     recognition.interimResults = true
     recognition.lang = 'en-US'
 
     recognition.onstart = () => setState('listening')
-    recognition.onresult = (e: SpeechRecognitionEvent) => {
-      const t = Array.from(e.results)
-        .map(r => r[0].transcript)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (e: any) => {
+      const t = Array.from(e.results as any[])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((r: any) => r[0].transcript)
         .join('')
       transcriptRef.current = t
       setTranscript(t)
@@ -76,7 +79,8 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
 
   function handleVoiceClick() {
     if (state === 'listening') {
-      recognitionRef.current?.stop()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(recognitionRef.current as any)?.stop()
     } else if (state === 'idle' || state === 'answered') {
       startListening()
     }
