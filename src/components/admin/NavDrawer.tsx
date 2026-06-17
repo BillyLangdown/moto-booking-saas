@@ -56,7 +56,7 @@ export default function NavDrawer({ open, onClose, tenantName, tenantSlug }: Pro
       >
         {/* Header row */}
         <div className="flex h-14 items-center justify-between px-5">
-          <span className="text-white font-semibold tracking-[0.18em] text-sm">orla</span>
+          <img src="/images/Orla-logo-horizontal-white.png" alt="Orla" className="h-6 w-auto object-contain" />
           <button
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 hover:text-white transition-colors"

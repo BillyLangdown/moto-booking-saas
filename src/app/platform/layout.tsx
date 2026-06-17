@@ -14,7 +14,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
       <header style={{ background: 'linear-gradient(180deg, #0D1117 0%, #1a2644 100%)' }}>
         <div className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-6">
           <div className="flex items-center gap-2.5 shrink-0">
-            <img src="/images/slick-logo.png" alt="Slick" className="h-7 w-auto object-contain" />
+            <img src="/images/Orla-logo-horizontal.png" alt="Orla" className="h-7 w-auto object-contain" />
             <span className="font-semibold text-sm text-white">Super Admin</span>
           </div>
 

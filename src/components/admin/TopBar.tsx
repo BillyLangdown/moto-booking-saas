@@ -14,20 +14,18 @@ export default function TopBar({ tenantName, tenantSlug }: Props) {
   return (
     <>
       <header
-        className="fixed top-0 inset-x-0 z-50 flex h-14 items-center justify-between px-5 md:hidden"
-        style={{ background: '#1F2937' }}
+        className="fixed top-0 inset-x-0 z-50 flex h-14 items-center justify-between px-5 md:hidden bg-white/90 backdrop-blur-sm border-b border-gray-100"
       >
         <button
           onClick={() => setNavOpen(true)}
-          className="text-white font-semibold tracking-[0.18em] text-sm"
           aria-label="Open navigation"
         >
-          orla
+          <img src="/images/Orla-logo-horizontal-blue.png" alt="Orla" className="h-6 w-auto object-contain" />
         </button>
 
         <button
           onClick={() => setNavOpen(true)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-accent hover:bg-accent/10 transition-colors"
           aria-label="Menu"
         >
           <svg width="16" height="14" viewBox="0 0 16 14" fill="none" aria-hidden="true">

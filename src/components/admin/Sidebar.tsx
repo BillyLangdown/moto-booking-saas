@@ -39,7 +39,7 @@ export default function Sidebar({ tenantName, tenantSlug }: Props) {
     >
       {/* Brand */}
       <div className="px-5 pt-6 pb-5 border-b border-white/8">
-        <span className="text-white font-semibold tracking-[0.18em] text-sm">orla</span>
+        <img src="/images/Orla-logo-horizontal-white.png" alt="Orla" className="h-6 w-auto object-contain" />
         <p className="text-white/40 text-xs mt-1 truncate">{tenantName}</p>
       </div>
 
