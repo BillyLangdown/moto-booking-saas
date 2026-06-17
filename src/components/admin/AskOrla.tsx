@@ -165,7 +165,7 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
   const eyeScaleY = isBlinking ? 0 : 1
 
   return (
-    <div className="max-w-xl mx-auto flex flex-col items-center gap-8 py-4">
+    <div className="w-full flex flex-col items-center gap-8">
       <style>{`
         @keyframes orla-breathe {
           0%, 100% { transform: scale(1); }

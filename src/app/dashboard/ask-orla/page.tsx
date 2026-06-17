@@ -6,5 +6,11 @@ export default async function AskOrlaPage() {
   const tenant = await getAuthTenant()
   const bookings = await bookingService.getBookings(tenant.id)
 
-  return <AskOrla bookings={bookings} />
+  return (
+    <div className="flex min-h-full items-center justify-center py-8">
+      <div className="w-full max-w-xl">
+        <AskOrla bookings={bookings} />
+      </div>
+    </div>
+  )
 }

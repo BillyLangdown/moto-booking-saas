@@ -1,10 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
+import { getAuthTenant } from '@/lib/auth'
+import { searchGmail } from '@/lib/google'
 import type { Booking } from '@/types'
 
 const anthropic = new Anthropic()
 
 export async function POST(req: NextRequest) {
+  // Run auth outside try/catch so redirect() can propagate correctly
+  const tenant = await getAuthTenant()
+
   try {
     const body = (await req.json()) as { query: string; bookings: Booking[] }
     const { query, bookings } = body
@@ -13,6 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
 
+    // Booking context
     const bookingLines = bookings.map(b => {
       const parts: string[] = [`• ${b.name}`]
       if (b.slot?.date) parts.push(`on ${b.slot.date}`)
@@ -26,18 +32,26 @@ export async function POST(req: NextRequest) {
       return parts.join(' ')
     })
 
+    // Gmail context — only if tenant has Google connected
+    let gmailSection = ''
+    if (tenant.googleConnected) {
+      const emails = await searchGmail(tenant.id, query, 5)
+      if (emails.length) {
+        const emailLines = emails.map(e =>
+          `• From: ${e.from}\n  Subject: ${e.subject}\n  Preview: ${e.snippet}`
+        )
+        gmailSection = `\nRecent emails matching this query:\n${emailLines.join('\n\n')}`
+      }
+    }
+
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 1024,
+      system: `You are Orla, a friendly and concise assistant for a booking business. Answer the user's question using the booking data and any email context provided. Be helpful and specific. Keep answers short and easy to read. If nothing matches, say so clearly.`,
       messages: [
         {
           role: 'user',
-          content: `You are Orla, a friendly and concise assistant for a booking business. Answer the user's question based on the booking data below. Be helpful and specific. If no bookings match, say so clearly. Keep your answer short and easy to read.
-
-Bookings:
-${bookingLines.length ? bookingLines.join('\n') : 'No bookings in the system yet.'}
-
-Question: ${query}`,
+          content: `Bookings:\n${bookingLines.length ? bookingLines.join('\n') : 'No bookings yet.'}${gmailSection}\n\nQuestion: ${query}`,
         },
       ],
     })
