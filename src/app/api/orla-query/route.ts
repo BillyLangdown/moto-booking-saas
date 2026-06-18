@@ -67,7 +67,26 @@ export async function POST(req: NextRequest) {
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 1024,
-      system: `You are Orla, a friendly and concise assistant for a booking business. Today's date is ${today}. Answer the user's question using the booking data and email context provided. If email access shows as not connected, tell the user their emails are not connected — they can connect them in Settings. If email access is connected but no emails matched, say so. Keep answers short and easy to read.`,
+      system: `You are Orla, a friendly assistant for a booking business. Today's date is ${today}.
+
+Respond ONLY with a valid JSON object — no markdown, no text outside the JSON.
+
+Format:
+{
+  "summary": "A short friendly sentence introducing the results",
+  "cards": [
+    { "type": "email", "title": "email subject", "meta": "From: sender name", "body": "email preview text" },
+    { "type": "booking", "title": "customer name", "meta": "date · time · session type", "body": "status" },
+    { "type": "info", "title": "short heading", "body": "answer text" }
+  ]
+}
+
+Rules:
+- Use email cards for email results, booking cards for booking results, info cards for general answers
+- If nothing is found, return a single info card explaining clearly
+- If email access is not connected, return a single info card telling the user to connect Google in Settings
+- If email access is connected but no emails matched, say so in an info card
+- Keep card body text short and easy to read`,
       messages: [
         {
           role: 'user',
@@ -76,8 +95,22 @@ export async function POST(req: NextRequest) {
       ],
     })
 
-    const text = message.content[0].type === 'text' ? message.content[0].text : ''
-    return NextResponse.json({ answer: text })
+    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+
+    // Strip markdown code fences if Claude wraps the JSON
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+
+    let summary = ''
+    let cards: { type: string; title: string; meta?: string; body: string }[] = []
+    try {
+      const parsed = JSON.parse(cleaned) as { summary?: string; cards?: typeof cards }
+      summary = parsed.summary ?? ''
+      cards = Array.isArray(parsed.cards) ? parsed.cards : []
+    } catch {
+      cards = [{ type: 'info', title: 'Orla', body: raw }]
+    }
+
+    return NextResponse.json({ summary, cards })
   } catch (err) {
     console.error('[orla-query]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

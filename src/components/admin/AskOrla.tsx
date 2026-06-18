@@ -6,6 +6,13 @@ import type { Booking } from '@/types'
 
 type State = 'idle' | 'listening' | 'thinking' | 'answered'
 
+type OrlaCard = {
+  type: 'email' | 'booking' | 'info'
+  title: string
+  meta?: string
+  body: string
+}
+
 const GAZE = [
   { x: 0,  y: 0  },
   { x: 7,  y: 0  },
@@ -16,24 +23,25 @@ const GAZE = [
   { x: 0,  y: -3 },
 ]
 
-// Eye arc geometry — bottom half arc (◡) in all states
 const EYE_R    = 13
-const EYE_CIRC = 2 * Math.PI * EYE_R          // ≈ 81.68
-const ARC_HALF = EYE_CIRC / 2                  // ≈ 40.84
+const EYE_CIRC = 2 * Math.PI * EYE_R
+const ARC_HALF = EYE_CIRC / 2
 
 export default function AskOrla({ bookings }: { bookings: Booking[] }) {
-  const [state, setState]       = useState<State>('idle')
+  const [state, setState]           = useState<State>('idle')
   const [transcript, setTranscript] = useState('')
   const [textInput, setTextInput]   = useState('')
-  const [answer, setAnswer]         = useState('')
+  const [summary, setSummary]       = useState('')
+  const [cards, setCards]           = useState<OrlaCard[]>([])
   const [error, setError]           = useState('')
   const [isBlinking, setIsBlinking] = useState(false)
   const [gaze, setGaze]             = useState({ x: 0, y: 0 })
 
-  const recognitionRef = useRef<unknown>(null)
-  const transcriptRef  = useRef('')
-  const blinkTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const gazeTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const recognitionRef  = useRef<unknown>(null)
+  const transcriptRef   = useRef('')
+  const blinkTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const gazeTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Blink
   useEffect(() => {
@@ -52,7 +60,7 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
     return () => { if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current) }
   }, [state])
 
-  // Gaze drift — snaps to centre when active
+  // Gaze drift
   useEffect(() => {
     if (state === 'listening' || state === 'thinking') {
       setGaze({ x: 0, y: 0 })
@@ -72,6 +80,8 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
     if (!query.trim()) return
     setState('thinking')
     setError('')
+    setSummary('')
+    setCards([])
     try {
       const res = await fetch('/api/orla-query', {
         method: 'POST',
@@ -79,8 +89,9 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
         body: JSON.stringify({ query, bookings }),
       })
       if (!res.ok) throw new Error('failed')
-      const data = (await res.json()) as { answer: string }
-      setAnswer(data.answer)
+      const data = (await res.json()) as { summary: string; cards: OrlaCard[] }
+      setSummary(data.summary ?? '')
+      setCards(data.cards ?? [])
       setState('answered')
     } catch {
       setError('Something went wrong. Please try again.')
@@ -97,13 +108,14 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
     }
     transcriptRef.current = ''
     setTranscript('')
-    setAnswer('')
+    setSummary('')
+    setCards([])
     setError('')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognition = new SR() as any
-    recognition.continuous   = false
+    recognition.continuous     = true
     recognition.interimResults = true
-    recognition.lang         = 'en-US'
+    recognition.lang           = 'en-US'
     recognition.onstart  = () => setState('listening')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (e: any) => {
@@ -111,8 +123,15 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
       const t = Array.from(e.results as any[]).map((r: any) => r[0].transcript).join('')
       transcriptRef.current = t
       setTranscript(t)
+      // Reset silence timer on every new word — submit 2s after speech stops
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = setTimeout(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(recognitionRef.current as any)?.stop()
+      }, 2000)
     }
     recognition.onend = () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
       const q = transcriptRef.current
       if (q) submitQuery(q)
       else setState('idle')
@@ -127,6 +146,7 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
 
   function handleVoiceClick() {
     if (state === 'listening') {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(recognitionRef.current as any)?.stop()
     } else if (state === 'idle' || state === 'answered') {
@@ -146,7 +166,8 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
   function reset() {
     setState('idle')
     setTranscript('')
-    setAnswer('')
+    setSummary('')
+    setCards([])
     setError('')
   }
 
@@ -154,15 +175,10 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
   const isThinking  = state === 'thinking'
   const isIdle      = state === 'idle' || state === 'answered'
 
-  // Eye stroke colour
-  const eyeStroke = isListening ? '#0d9488' : '#a8a29e'
-
-  // ◡ arc in all states
+  const eyeStroke    = isListening ? '#0d9488' : '#a8a29e'
   const eyeDashArray  = `${ARC_HALF} ${ARC_HALF}`
   const eyeDashOffset = `${ARC_HALF}`
-
-  // Blink via scaleY on the eye group
-  const eyeScaleY = isBlinking ? 0 : 1
+  const eyeScaleY    = isBlinking ? 0 : 1
 
   return (
     <div className="w-full flex flex-col items-center gap-8">
@@ -181,6 +197,10 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
         }
         @keyframes orla-transcript-in {
           from { opacity: 0; transform: translateY(5px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes orla-card-in {
+          from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         .orla-breathe       { animation: orla-breathe 5s ease-in-out infinite; }
@@ -207,27 +227,17 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
             overflow: 'hidden',
             background: isListening
               ? 'linear-gradient(135deg, #f0fdfa 0%, #99f6e4 100%)'
-              : isThinking
-              ? 'linear-gradient(135deg, #fafaf9 0%, #f5f5f4 100%)'
               : 'linear-gradient(135deg, #fafaf9 0%, #f5f5f4 100%)',
-            boxShadow: isIdle
-              ? '0 4px 24px rgba(0,0,0,0.07)'
-              : undefined,
+            boxShadow: isIdle ? '0 4px 24px rgba(0,0,0,0.07)' : undefined,
           }}
           aria-label={isListening ? 'Stop listening' : 'Press to speak'}
         >
           <svg width="120" height="120" viewBox="0 0 100 100" fill="none">
-
-            {/* Left eye — gaze wrapper, then arc + pupil both blink together */}
             <g style={{ transform: `translate(${gaze.x}px, ${gaze.y}px)`, transition: 'transform 0.9s ease' }}>
               <circle
                 cx="30" cy="40" r={EYE_R}
-                stroke={eyeStroke}
-                strokeWidth="3.5"
-                strokeLinecap="round"
-                fill="none"
-                strokeDasharray={eyeDashArray}
-                strokeDashoffset={eyeDashOffset}
+                stroke={eyeStroke} strokeWidth="3.5" strokeLinecap="round" fill="none"
+                strokeDasharray={eyeDashArray} strokeDashoffset={eyeDashOffset}
                 style={{
                   transformOrigin: '30px 40px',
                   transform: `scaleY(${eyeScaleY})`,
@@ -235,17 +245,11 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
                 }}
               />
             </g>
-
-            {/* Right eye */}
             <g style={{ transform: `translate(${gaze.x}px, ${gaze.y}px)`, transition: 'transform 0.9s ease' }}>
               <circle
                 cx="70" cy="40" r={EYE_R}
-                stroke={eyeStroke}
-                strokeWidth="3.5"
-                strokeLinecap="round"
-                fill="none"
-                strokeDasharray={eyeDashArray}
-                strokeDashoffset={eyeDashOffset}
+                stroke={eyeStroke} strokeWidth="3.5" strokeLinecap="round" fill="none"
+                strokeDasharray={eyeDashArray} strokeDashoffset={eyeDashOffset}
                 style={{
                   transformOrigin: '70px 40px',
                   transform: `scaleY(${eyeScaleY})`,
@@ -253,8 +257,6 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
                 }}
               />
             </g>
-
-            {/* Thinking dots */}
             {isThinking && (
               <>
                 <circle cx="35" cy="68" r="3.5" fill="#a8a29e" className="orla-think-dot-1" />
@@ -266,7 +268,7 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
         </button>
       </div>
 
-      {/* Status */}
+      {/* Status + live transcript */}
       <div className="-mt-4 flex flex-col items-center gap-3 w-full">
         <p className="text-sm min-h-[20px] text-center transition-colors duration-300"
           style={{ color: isListening ? '#0d9488' : '#9ca3af' }}>
@@ -284,19 +286,16 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
         )}
       </div>
 
-      {transcript && !isListening && (
-        <div className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
-          <p className="text-xs text-gray-400 mb-1">You asked</p>
-          <p className="text-sm text-gray-700">{transcript}</p>
-        </div>
-      )}
-
-      {answer && (
-        <div className="w-full rounded-xl px-4 py-4"
-          style={{ background: '#f0fdfa', border: '1px solid #ccfbf1' }}>
-          <p className="text-xs font-medium mb-2" style={{ color: '#0d9488' }}>Orla</p>
-          <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{answer}</p>
-          <button onClick={reset} className="mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+      {/* Result cards */}
+      {state === 'answered' && (
+        <div className="w-full flex flex-col gap-3">
+          {summary && (
+            <p className="text-sm text-gray-500 px-1">{summary}</p>
+          )}
+          {cards.map((card, i) => (
+            <ResultCard key={i} card={card} index={i} />
+          ))}
+          <button onClick={reset} className="mt-1 text-xs text-gray-400 hover:text-gray-600 transition-colors self-start px-1">
             Ask another question →
           </button>
         </div>
@@ -328,7 +327,7 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
         </div>
       </form>
 
-      {!isListening && !isThinking && (
+      {!isListening && !isThinking && state === 'idle' && (
         <div className="w-full border-t border-gray-100 pt-4">
           <p className="text-xs text-gray-400 mb-3">Quick actions</p>
           <Link href="/dashboard/bookings"
@@ -345,11 +344,67 @@ export default function AskOrla({ bookings }: { bookings: Booking[] }) {
   )
 }
 
+const CARD_STYLES: Record<string, { border: string; icon: React.ReactNode }> = {
+  email: {
+    border: '#0d9488',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="#0d9488" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="4" width="14" height="11" rx="1.5"/>
+        <path d="M2 7l7 5 7-5"/>
+      </svg>
+    ),
+  },
+  booking: {
+    border: '#3b82f6',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinecap="round">
+        <rect x="2" y="4" width="14" height="11" rx="1.5"/>
+        <path d="M6 2v4M12 2v4M2 8h14"/>
+      </svg>
+    ),
+  },
+  info: {
+    border: '#a8a29e',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="#a8a29e" strokeWidth="1.6" strokeLinecap="round">
+        <circle cx="9" cy="9" r="7"/>
+        <path d="M9 8v5M9 6v.5"/>
+      </svg>
+    ),
+  },
+}
+
+function ResultCard({ card, index }: { card: OrlaCard; index: number }) {
+  const style = CARD_STYLES[card.type] ?? CARD_STYLES.info
+
+  return (
+    <div
+      className="w-full rounded-xl bg-white shadow-sm border border-gray-100 overflow-hidden"
+      style={{
+        borderLeft: `3px solid ${style.border}`,
+        animation: 'orla-card-in 0.3s ease both',
+        animationDelay: `${index * 80}ms`,
+      }}
+    >
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 shrink-0">{style.icon}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-800">{card.title}</p>
+            {card.meta && <p className="text-xs text-gray-400 mt-0.5">{card.meta}</p>}
+            <p className="text-sm text-gray-600 mt-1.5 leading-relaxed">{card.body}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function CalendarIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-      <rect x="2" y="4" width="14" height="11" rx="1.5" />
-      <path d="M6 2v4M12 2v4M2 8h14" />
+      <rect x="2" y="4" width="14" height="11" rx="1.5"/>
+      <path d="M6 2v4M12 2v4M2 8h14"/>
     </svg>
   )
 }
