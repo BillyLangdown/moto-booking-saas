@@ -35,23 +35,34 @@ export async function POST(req: NextRequest) {
     // Gmail context — only if tenant has Google connected
     let gmailSection = ''
     if (tenant.googleConnected) {
-      const emails = await searchGmail(tenant.id, query, 5)
+      // Strip conversational filler so Gmail gets clean keywords
+      const gmailQuery = query
+        .replace(/can you|please|look through|find|search|my emails?|anything|related to|about|for me/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+      const emails = await searchGmail(tenant.id, gmailQuery || query, 5)
       if (emails.length) {
         const emailLines = emails.map(e =>
           `• From: ${e.from}\n  Subject: ${e.subject}\n  Preview: ${e.snippet}`
         )
-        gmailSection = `\nRecent emails matching this query:\n${emailLines.join('\n\n')}`
+        gmailSection = `\nEmails found:\n${emailLines.join('\n\n')}`
+      } else {
+        gmailSection = `\nEmail access: connected (no emails matched this search)`
       }
+    } else {
+      gmailSection = `\nEmail access: not connected`
     }
+
+    const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 1024,
-      system: `You are Orla, a friendly and concise assistant for a booking business. Answer the user's question using the booking data and any email context provided. Be helpful and specific. Keep answers short and easy to read. If nothing matches, say so clearly.`,
+      system: `You are Orla, a friendly and concise assistant for a booking business. Today's date is ${today}. Answer the user's question using the booking data and email context provided. If email access shows as not connected, tell the user their emails are not connected — they can connect them in Settings. If email access is connected but no emails matched, say so. Keep answers short and easy to read.`,
       messages: [
         {
           role: 'user',
-          content: `Bookings:\n${bookingLines.length ? bookingLines.join('\n') : 'No bookings yet.'}${gmailSection}\n\nQuestion: ${query}`,
+          content: `Bookings:\n${bookingLines.length ? bookingLines.join('\n') : 'No bookings yet.'}\n${gmailSection}\n\nQuestion: ${query}`,
         },
       ],
     })
