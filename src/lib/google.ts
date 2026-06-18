@@ -195,7 +195,11 @@ export async function searchGmail(tenantId: string, query: string, maxResults = 
     `https://www.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=${maxResults}`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   )
-  if (!listRes.ok) return []
+  if (!listRes.ok) {
+    const errText = await listRes.text()
+    console.error('[searchGmail] list failed:', listRes.status, errText)
+    throw new Error(`Gmail API error ${listRes.status}: ${errText}`)
+  }
 
   const { messages } = (await listRes.json()) as { messages?: { id: string }[] }
   if (!messages?.length) return []

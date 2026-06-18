@@ -57,7 +57,24 @@ export default function GoogleConnect({ tenant }: Props) {
       <div>
         <p className="text-sm font-semibold text-ink">Connect your Google account</p>
         <p className="text-xs text-secondary mt-1 leading-relaxed">
-          Confirmed bookings appear automatically in your Google Calendar, and Orla can search your Gmail to answer questions about customer replies.
+          Connecting Google unlocks two things:
+        </p>
+        <ul className="mt-2 flex flex-col gap-1.5">
+          <li className="flex items-start gap-2 text-xs text-secondary">
+            <svg className="mt-0.5 shrink-0 text-teal-500" width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1.5 6.5l3 3 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span><span className="font-medium text-ink">Google Calendar</span> — confirmed bookings are added to your calendar automatically</span>
+          </li>
+          <li className="flex items-start gap-2 text-xs text-secondary">
+            <svg className="mt-0.5 shrink-0 text-teal-500" width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1.5 6.5l3 3 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span><span className="font-medium text-ink">Gmail</span> — Orla can search your emails to answer questions about customer enquiries and replies</span>
+          </li>
+        </ul>
+        <p className="mt-3 text-[11px] text-muted leading-relaxed">
+          Orla only reads your emails to answer questions — it never sends, deletes, or modifies anything.
         </p>
       </div>
       <Button type="button" onClick={handleConnect} loading={connecting} className="self-start">

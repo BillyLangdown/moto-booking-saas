@@ -35,19 +35,19 @@ export async function POST(req: NextRequest) {
     // Gmail context — only if tenant has Google connected
     let gmailSection = ''
     if (tenant.googleConnected) {
-      // Strip conversational filler so Gmail gets clean keywords
-      const gmailQuery = query
-        .replace(/can you|please|look through|find|search|my emails?|anything|related to|about|for me/gi, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-      const emails = await searchGmail(tenant.id, gmailQuery || query, 5)
-      if (emails.length) {
-        const emailLines = emails.map(e =>
-          `• From: ${e.from}\n  Subject: ${e.subject}\n  Preview: ${e.snippet}`
-        )
-        gmailSection = `\nEmails found:\n${emailLines.join('\n\n')}`
-      } else {
-        gmailSection = `\nEmail access: connected (no emails matched this search)`
+      try {
+        const emails = await searchGmail(tenant.id, query, 5)
+        if (emails.length) {
+          const emailLines = emails.map(e =>
+            `• From: ${e.from}\n  Subject: ${e.subject}\n  Preview: ${e.snippet}`
+          )
+          gmailSection = `\nEmails found:\n${emailLines.join('\n\n')}`
+        } else {
+          gmailSection = `\nEmail access: connected (no emails matched this search)`
+        }
+      } catch (gmailErr) {
+        console.error('[orla-query] Gmail search error:', gmailErr)
+        gmailSection = `\nEmail access: connected but search failed — the user may need to reconnect Google in Settings`
       }
     } else {
       gmailSection = `\nEmail access: not connected`
