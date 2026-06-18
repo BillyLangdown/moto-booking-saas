@@ -36,7 +36,16 @@ export async function POST(req: NextRequest) {
     let gmailSection = ''
     if (tenant.googleConnected) {
       try {
-        const emails = await searchGmail(tenant.id, query, 5)
+        // Build a Gmail OR query using the core terms plus close synonyms
+        const kwMsg = await anthropic.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 40,
+          system: 'Extract the core search topic from the message and return 3-4 closely related Gmail search terms joined with OR. Only include genuinely synonymous or commonly associated terms — do not broaden too far. Reply with just the query string, nothing else. Example input: "find emails about motorbike tests" → Example output: "motorbike test OR motorcycle test OR CBT OR DAS"',
+          messages: [{ role: 'user', content: query }],
+        })
+        const gmailQuery = kwMsg.content[0].type === 'text' ? kwMsg.content[0].text.trim() : query
+
+        const emails = await searchGmail(tenant.id, gmailQuery, 5)
         if (emails.length) {
           const emailLines = emails.map(e =>
             `• From: ${e.from}\n  Subject: ${e.subject}\n  Preview: ${e.snippet}`
