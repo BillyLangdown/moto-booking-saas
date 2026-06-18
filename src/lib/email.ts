@@ -363,6 +363,50 @@ Booking ref: ${booking.id}`
   }
 }
 
+export async function sendReminderEmail(booking: Booking, tenant: Tenant): Promise<void> {
+  try {
+    if (!resend) { console.warn('[email] sendReminderEmail skipped - no Resend client'); return }
+    if (!booking.email) return
+
+    const accentColor = tenant.branding?.accentColor ?? '#0f172a'
+    const dateLine = booking.slot?.date ? `<p style="margin:0 0 6px;font-size:15px;font-weight:500;">${booking.slot.date}</p>` : ''
+    const timeLine = booking.slot?.startTime
+      ? `<p style="margin:0;color:#64748b;font-size:14px;">${booking.slot.startTime}${booking.slot.endTime ? ` – ${booking.slot.endTime}` : ''}</p>`
+      : ''
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:sans-serif;color:#0f172a;background:#f8fafc;margin:0;padding:32px 16px;">
+  <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
+    <div style="background:${accentColor};padding:24px 28px;">
+      <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">${tenant.name}</p>
+    </div>
+    <div style="padding:28px;">
+      <h1 style="margin:0 0 8px;font-size:20px;font-weight:600;">Reminder: your booking is coming up</h1>
+      <p style="margin:0 0 24px;color:#64748b;font-size:15px;">Hi ${booking.name}, just a reminder about your upcoming ${booking.sessionType} session.</p>
+      <div style="padding:16px;background:#f8fafc;border-radius:8px;border-left:3px solid ${accentColor};">
+        <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;">${booking.sessionType}</p>
+        ${dateLine}${timeLine}
+      </div>
+      <p style="margin:24px 0 0;color:#64748b;font-size:14px;">If you have any questions, contact us at ${tenant.email}${tenant.phone ? ` or ${tenant.phone}` : ''}.</p>
+    </div>
+  </div>
+</body>
+</html>`
+
+    await resend.emails.send({
+      from: FROM,
+      to: booking.email,
+      subject: `Reminder: your ${booking.sessionType} with ${tenant.name}`,
+      html,
+    })
+  } catch (err) {
+    console.error('[email] Failed to send reminder:', err)
+  }
+}
+
 export async function sendBookingDeclined(
   booking: Booking,
   startTime: string,

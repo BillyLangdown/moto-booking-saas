@@ -137,6 +137,14 @@ export const bookingService = {
     return mapBooking(data as Record<string, unknown>)
   },
 
+  async updateBooking(bookingId: string, updates: Partial<Pick<Booking, 'status' | 'notes'>>): Promise<void> {
+    const row: Record<string, unknown> = {}
+    if (updates.status !== undefined) row.status = updates.status
+    if (updates.notes  !== undefined) row.notes  = updates.notes
+    const { error } = await supabase.from('bookings').update(row).eq('id', bookingId)
+    if (error) throw new Error(error.message)
+  },
+
   async cancelBooking(bookingId: string): Promise<void> {
     const { error } = await supabase
       .from('bookings')

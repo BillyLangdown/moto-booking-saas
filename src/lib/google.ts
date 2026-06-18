@@ -11,6 +11,7 @@ const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET ?? ''
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/gmail.send',
 ].join(' ')
 
 export function getGoogleAuthUrl(tenantId: string, redirectUri: string): string {
@@ -182,9 +183,12 @@ export async function deleteCalendarEvent(tenantId: string, googleEventId: strin
 }
 
 export interface GmailSnippet {
-  subject: string
-  from:    string
-  snippet: string
+  id:        string
+  threadId:  string
+  messageId: string  // RFC Message-ID header for reply threading
+  subject:   string
+  from:      string
+  snippet:   string
 }
 
 export async function searchGmail(tenantId: string, query: string, maxResults = 5): Promise<GmailSnippet[]> {
@@ -201,25 +205,67 @@ export async function searchGmail(tenantId: string, query: string, maxResults = 
     throw new Error(`Gmail API error ${listRes.status}: ${errText}`)
   }
 
-  const { messages } = (await listRes.json()) as { messages?: { id: string }[] }
+  const { messages } = (await listRes.json()) as { messages?: { id: string; threadId: string }[] }
   if (!messages?.length) return []
 
   const results = await Promise.all(
     messages.map(async (m): Promise<GmailSnippet | null> => {
       const msgRes = await fetch(
-        `https://www.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From`,
+        `https://www.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Message-ID`,
         { headers: { Authorization: `Bearer ${accessToken}` } },
       )
       if (!msgRes.ok) return null
-      const msg = (await msgRes.json()) as { snippet?: string; payload?: { headers?: { name: string; value: string }[] } }
+      const msg = (await msgRes.json()) as { snippet?: string; threadId?: string; payload?: { headers?: { name: string; value: string }[] } }
       const headers = msg.payload?.headers ?? []
       return {
-        subject: headers.find(h => h.name === 'Subject')?.value ?? '',
-        from:    headers.find(h => h.name === 'From')?.value ?? '',
-        snippet: msg.snippet ?? '',
+        id:        m.id,
+        threadId:  m.threadId,
+        messageId: headers.find(h => h.name === 'Message-ID')?.value ?? '',
+        subject:   headers.find(h => h.name === 'Subject')?.value ?? '',
+        from:      headers.find(h => h.name === 'From')?.value ?? '',
+        snippet:   msg.snippet ?? '',
       }
     }),
   )
 
   return results.filter((r): r is GmailSnippet => r !== null)
+}
+
+export async function sendGmailReply(
+  tenantId: string,
+  fromEmail: string,
+  to: string,
+  subject: string,
+  body: string,
+  threadId: string,
+  inReplyToMessageId: string,
+): Promise<void> {
+  const accessToken = await getValidAccessToken(tenantId)
+  if (!accessToken) throw new Error('No Google access token — reconnect Google in Settings')
+
+  const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`
+  const mime = [
+    `From: ${fromEmail}`,
+    `To: ${to}`,
+    `Subject: ${replySubject}`,
+    `In-Reply-To: ${inReplyToMessageId}`,
+    `References: ${inReplyToMessageId}`,
+    'Content-Type: text/plain; charset=UTF-8',
+    'MIME-Version: 1.0',
+    '',
+    body,
+  ].join('\r\n')
+
+  const encoded = Buffer.from(mime).toString('base64url')
+
+  const res = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages/send', {
+    method:  'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ raw: encoded, threadId }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Gmail send failed: ${err}`)
+  }
 }
