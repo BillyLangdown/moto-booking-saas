@@ -10,13 +10,20 @@ export default async function AskOrlaPage() {
     availabilityService.getAllSlots(tenant.id),
   ])
 
-  // Only send bookings from the last 90 days or future to Orla — prevents
-  // stale pending/cancelled bookings from distorting AI answers
-  const cutoff = new Date()
-  cutoff.setDate(cutoff.getDate() - 90)
+  // Future bookings: always include regardless of status
+  // Past bookings: only include confirmed/cancelled — pending/awaiting_payment in the
+  // past are irrelevant and skew Orla's answers
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
   const bookings = allBookings.filter(b => {
     if (!b.slot?.date) return true
-    return new Date(b.slot.date) >= cutoff
+    const slotDate = new Date(b.slot.date)
+    if (slotDate >= today) return true
+    if (slotDate >= thirtyDaysAgo) return b.status === 'confirmed' || b.status === 'cancelled'
+    return false
   })
 
   return (
