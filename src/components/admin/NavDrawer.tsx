@@ -14,7 +14,7 @@ interface Props {
 
 const NAV = [
   { href: '/dashboard/ask-orla', label: 'Ask Orla' },
-  { href: '/dashboard/bookings', label: 'Today' },
+  { href: '/dashboard/bookings', label: 'Bookings' },
   { href: '/dashboard/availability', label: 'Availability' },
   { href: '/dashboard/settings', label: 'Settings' },
 ]
