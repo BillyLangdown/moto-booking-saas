@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { bookingService } from '@/services/bookingService'
 import { tenantService } from '@/services/tenantService'
 import { sendBookingDeclined } from '@/lib/email'
@@ -33,6 +34,44 @@ export async function GET(
   } catch (err) {
     console.error('[booking/deny]', err)
     return page('Something went wrong', 'Please manage this booking from the dashboard instead.', false)
+  }
+}
+
+// ── Mobile POST handler ───────────────────────────────────────────────────────
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params
+
+  const authHeader = req.headers.get('authorization') ?? ''
+  const accessToken = authHeader.replace(/^bearer /i, '').trim()
+  if (!accessToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const userClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    { global: { headers: { authorization: `Bearer ${accessToken}` } } }
+  )
+  const { data: { user } } = await userClient.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const booking = await bookingService.getBookingById(id)
+    if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    if (booking.status === 'confirmed') return NextResponse.json({ error: 'Already confirmed' }, { status: 400 })
+    if (booking.status === 'cancelled') return NextResponse.json({ ok: true, alreadyDeclined: true })
+
+    await bookingService.cancelBooking(id)
+    const tenant = await tenantService.getTenantById(booking.tenantId)
+    if (tenant && booking.startTimeIso && booking.endTimeIso) {
+      await sendBookingDeclined(booking, booking.startTimeIso, booking.endTimeIso, tenant)
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[booking/deny POST]', err)
+    return NextResponse.json({ error: 'Failed to decline booking' }, { status: 500 })
   }
 }
 

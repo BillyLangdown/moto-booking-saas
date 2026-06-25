@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { bookingService } from '@/services/bookingService'
 import { tenantService } from '@/services/tenantService'
 import { adminSupabase } from '@/lib/supabase/admin'
@@ -51,6 +52,58 @@ export async function GET(
   } catch (err) {
     console.error('[booking/confirm]', err)
     return page('Something went wrong', 'Please confirm this booking from the dashboard instead.', false)
+  }
+}
+
+// ── Mobile POST handler ───────────────────────────────────────────────────────
+// Called by the iOS app with a Bearer token; returns JSON instead of HTML.
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params
+
+  const authHeader = req.headers.get('authorization') ?? ''
+  const accessToken = authHeader.replace(/^bearer /i, '').trim()
+  if (!accessToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const userClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    { global: { headers: { authorization: `Bearer ${accessToken}` } } }
+  )
+  const { data: { user } } = await userClient.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const booking = await bookingService.getBookingById(id)
+    if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    if (booking.status === 'confirmed') return NextResponse.json({ ok: true, alreadyConfirmed: true })
+    if (booking.status === 'cancelled') return NextResponse.json({ error: 'Booking is cancelled' }, { status: 400 })
+
+    const confirmed = await bookingService.confirmBooking(id)
+    const tenant = await tenantService.getTenantById(confirmed.tenantId)
+
+    let startTime = confirmed.startTimeIso
+    let endTime   = confirmed.endTimeIso
+    if ((!startTime || !endTime) && confirmed.slotId) {
+      const { data: slot } = await adminSupabase
+        .from('availability_slots').select('start_time, end_time').eq('id', confirmed.slotId).single()
+      startTime = slot?.start_time as string ?? startTime
+      endTime   = slot?.end_time   as string ?? endTime
+    }
+
+    if (tenant && startTime && endTime) {
+      await sendBookingConfirmation(confirmed, startTime, endTime, tenant)
+      if (tenant.googleConnected) {
+        try { await createCalendarEvent(tenant.id, confirmed, startTime, endTime) } catch {}
+      }
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[booking/confirm POST]', err)
+    return NextResponse.json({ error: 'Failed to confirm booking' }, { status: 500 })
   }
 }
 

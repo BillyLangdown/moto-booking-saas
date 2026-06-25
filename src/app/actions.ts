@@ -8,6 +8,7 @@ import { tenantService } from '@/services/tenantService'
 import { resourceService } from '@/services/resourceService'
 import { adminSupabase } from '@/lib/supabase/admin'
 import { sendBookingConfirmation, sendAdminNotification, sendPaymentLink } from '@/lib/email'
+import { sendPushToTenant } from '@/lib/apns'
 import { stripe, createCheckoutSession, capturePaymentIntent, cancelPaymentIntent } from '@/lib/stripe'
 import { createCalendarEvent, deleteCalendarEvent, disconnectGoogleAccount } from '@/lib/google'
 import type { Booking, CreateBookingInput, CreateSlotInput, IntakeQuestion, PaymentMode, SessionTypePrices, UpdateTenantInput } from '@/types'
@@ -54,6 +55,38 @@ export async function createBookingAction(
       : 0
     const needsPayment = amount > 0 && !!tenant?.stripeOnboarded && !!tenant?.stripeAccountId
 
+    // ── DEPOSIT FLOW ──────────────────────────────────────────────────────────
+    // Don't create the booking until the customer has successfully paid the deposit.
+    // All booking details go into Stripe metadata; the webhook creates the booking
+    // (and claims the slot) only after Stripe confirms the payment.
+    if (tenant && needsPayment && tenant.paymentMode === 'deposit') {
+      const checkoutUrl = await createCheckoutSession({
+        tenantId:         input.tenantId,
+        tenantSlug:       tenant.slug,
+        stripeAccountId:  tenant.stripeAccountId!,
+        amountInSmallest: amount,
+        currency:         tenant.currency,
+        label:            input.sessionType ? `${input.sessionType} — ${tenant.name}` : tenant.name,
+        customerEmail:    input.email,
+        cancelUrl:        `${appUrl}/book/${tenant.slug}`,
+        appUrl,
+        captureMethod:    'manual',
+        pendingBooking: {
+          slotId:       input.slotId,
+          resourceId:   input.resourceId,
+          name:         input.name,
+          email:        input.email,
+          phone:        input.phone ?? '',
+          sessionType:  input.sessionType,
+          startTime:    input.startTime,
+          endTime:      input.endTime,
+          intakeAnswers: input.intakeAnswers,
+        },
+      })
+      return { checkoutUrl }
+    }
+
+    // ── ALL OTHER FLOWS ───────────────────────────────────────────────────────
     // auto-confirm + payment → capture immediately; manual confirm + payment → authorize only
     const captureMethod = autoConfirm ? 'automatic' : 'manual'
 
@@ -64,6 +97,15 @@ export async function createBookingAction(
     // For manual-capture flow the webhook sends the admin notification after card authorization
     if (tenant && !(needsPayment && !autoConfirm)) {
       await sendAdminNotification(booking, input.startTime, input.endTime, tenant)
+      // Push to any admin devices registered for this tenant
+      const pushBody = booking.status === 'pending'
+        ? `${booking.name} requested a ${booking.sessionType} — tap to review`
+        : `${booking.name} booked a ${booking.sessionType}`
+      void sendPushToTenant(booking.tenantId, {
+        title: 'New booking',
+        body: pushBody,
+        data: { bookingId: booking.id, type: 'new_booking' },
+      })
     }
 
     if (needsPayment && tenant) {
@@ -73,7 +115,7 @@ export async function createBookingAction(
         stripeAccountId:  tenant.stripeAccountId!,
         amountInSmallest: amount,
         currency:         tenant.currency,
-        label:            booking.sessionType ? `${booking.sessionType} - ${tenant.name}` : tenant.name,
+        label:            booking.sessionType ? `${booking.sessionType} — ${tenant.name}` : tenant.name,
         customerEmail:    booking.email,
         cancelUrl:        `${appUrl}/book/${tenant.slug}`,
         appUrl,
