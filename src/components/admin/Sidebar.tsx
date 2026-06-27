@@ -35,11 +35,11 @@ export default function Sidebar({ tenantName, tenantSlug }: Props) {
   return (
     <aside
       className="flex h-full w-56 shrink-0 flex-col"
-      style={{ background: '#1F2937' }}
+      style={{ background: '#0B1120' }}
     >
       {/* Brand */}
       <div className="px-5 pt-6 pb-5 border-b border-white/8">
-        <img src="/images/Orla-logo-horizontal-white.png" alt="Orla" className="h-6 w-auto object-contain" />
+        <img src="/images/orla_booking_logo_light.png" alt="Orla" className="h-6 w-auto object-contain" />
         <p className="text-white/40 text-xs mt-1 truncate">{tenantName}</p>
       </div>
 

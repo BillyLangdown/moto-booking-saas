@@ -14,13 +14,13 @@ export default function TopBar({ tenantName, tenantSlug }: Props) {
   return (
     <>
       <header
-        className="fixed top-0 inset-x-0 z-50 flex h-14 items-center justify-between px-5 md:hidden bg-white/90 backdrop-blur-sm border-b border-gray-100"
+        className="fixed top-0 inset-x-0 z-50 flex h-14 items-center justify-between px-5 md:hidden backdrop-blur-sm border-b border-border" style={{ background: 'rgba(11,17,32,0.95)' }}
       >
         <button
           onClick={() => setNavOpen(true)}
           aria-label="Open navigation"
         >
-          <img src="/images/Orla-logo-horizontal-blue.png" alt="Orla" className="h-6 w-auto object-contain" />
+          <img src="/images/orla_booking_logo_light.png" alt="Orla" className="h-6 w-auto object-contain" />
         </button>
 
         <button

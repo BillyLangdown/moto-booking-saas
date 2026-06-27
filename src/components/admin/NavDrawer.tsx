@@ -52,11 +52,11 @@ export default function NavDrawer({ open, onClose, tenantName, tenantSlug }: Pro
           'fixed inset-x-0 top-0 z-[70] transition-transform duration-300 ease-in-out',
           open ? 'translate-y-0' : '-translate-y-full',
         ].join(' ')}
-        style={{ background: '#1F2937' }}
+        style={{ background: '#0B1120' }}
       >
         {/* Header row */}
         <div className="flex h-14 items-center justify-between px-5">
-          <img src="/images/Orla-logo-horizontal-white.png" alt="Orla" className="h-6 w-auto object-contain" />
+          <img src="/images/orla_booking_logo_light.png" alt="Orla" className="h-6 w-auto object-contain" />
           <button
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 hover:text-white transition-colors"

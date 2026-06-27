@@ -18,13 +18,13 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-[100dvh] flex items-center justify-center p-4"
-      style={{ background: '#1F2937' }}
+      style={{ background: '#0B1120' }}
     >
       <div className="w-full max-w-sm">
 
-        {/* Wordmark */}
+        {/* Logo */}
         <div className="flex flex-col items-center gap-3 mb-10">
-          <span className="text-xl font-semibold text-white tracking-[0.18em] uppercase">orla</span>
+          <img src="/images/orla_booking_logo_light.png" alt="Orla" className="h-8 w-auto object-contain" />
         </div>
 
         <div className="bg-white/5 backdrop-blur border border-white/10 p-8 rounded-[10px]">
