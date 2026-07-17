@@ -72,6 +72,55 @@ export async function createBusinessAction(
   return { tenantId: tenant.id }
 }
 
+// Invite links expire 24h after being sent (see the "Invite user" Supabase
+// email template) and there was previously no way to send a new one without
+// re-running createBusinessAction, which would create a duplicate tenant.
+// This re-issues a fresh invite for an existing tenant admin: drop the stale
+// auth user + users-table row for this email (if any), send a brand new
+// invite, and re-link it to the same tenant with the same role.
+export async function resendInviteAction(
+  tenantId: string,
+  email: string,
+): Promise<{ error?: string }> {
+  const { data: existing } = await adminSupabase
+    .from('users')
+    .select('id, role')
+    .eq('tenant_id', tenantId)
+    .eq('email', email)
+    .maybeSingle()
+
+  const role = existing?.role ?? 'admin'
+
+  if (existing?.id) {
+    await adminSupabase.auth.admin.deleteUser(existing.id)
+    await adminSupabase.from('users').delete().eq('id', existing.id)
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  const { data: authData, error: authError } = await adminSupabase.auth.admin.inviteUserByEmail(
+    email,
+    { redirectTo: `${baseUrl}/auth/callback?next=/setup` },
+  )
+
+  if (authError) return { error: authError.message }
+
+  const { error: userError } = await adminSupabase.from('users').insert({
+    id:        authData.user.id,
+    tenant_id: tenantId,
+    email,
+    role,
+  })
+
+  if (userError) {
+    await adminSupabase.auth.admin.deleteUser(authData.user.id)
+    return { error: userError.message }
+  }
+
+  revalidatePath(`/platform/${tenantId}`)
+  return {}
+}
+
 export async function createResourceAction(
   tenantId: string,
   name: string,

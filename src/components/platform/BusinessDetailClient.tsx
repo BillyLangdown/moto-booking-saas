@@ -5,23 +5,44 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Resource, Tenant } from '@/types'
 import ResourceManager from './ResourceManager'
-import { deleteBusinessAction } from '@/app/platform/actions'
+import { deleteBusinessAction, resendInviteAction } from '@/app/platform/actions'
+
+interface AdminUser {
+  id: string
+  email: string
+  role: string
+}
 
 interface Props {
   tenant: Tenant
   resources: Resource[]
+  admins: AdminUser[]
 }
 
 const TABS = ['Details', 'Resources'] as const
 type Tab = typeof TABS[number]
 
-export default function BusinessDetailClient({ tenant, resources }: Props) {
+export default function BusinessDetailClient({ tenant, resources, admins }: Props) {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('Details')
   const [showDelete, setShowDelete] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [resendingId, setResendingId] = useState<string | null>(null)
+  const [resendResult, setResendResult] = useState<{ id: string; error?: string } | null>(null)
+
+  async function handleResend(admin: AdminUser) {
+    setResendingId(admin.id)
+    setResendResult(null)
+    const result = await resendInviteAction(tenant.id, admin.email)
+    setResendingId(null)
+    setResendResult({ id: admin.id, error: result.error })
+    // resendInviteAction re-creates the auth user under a new id, so give the
+    // "Invite resent" confirmation a moment on screen before the refreshed
+    // admins list swaps this row's id out from under it.
+    setTimeout(() => router.refresh(), 2000)
+  }
 
   async function handleDelete() {
     if (confirmText !== tenant.name) return
@@ -109,6 +130,42 @@ export default function BusinessDetailClient({ tenant, resources }: Props) {
               <span className="text-secondary">Tenant ID</span>
               <span className="font-mono text-xs text-secondary">{tenant.id}</span>
             </div>
+          </div>
+
+          {/* Team access */}
+          <div className="bg-card shadow-sm">
+            <div className="px-5 py-3 border-b border-border/50">
+              <p className="text-sm font-medium text-ink">Team access</p>
+            </div>
+            {admins.length === 0 ? (
+              <div className="px-5 py-4 text-sm text-secondary">No admins linked to this business yet.</div>
+            ) : (
+              <div className="divide-y divide-border/50">
+                {admins.map(admin => (
+                  <div key={admin.id} className="px-5 py-3 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm text-ink">{admin.email}</p>
+                      <p className="text-xs text-secondary capitalize">{admin.role}</p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      {resendResult?.id === admin.id && (
+                        <span className={`text-xs ${resendResult.error ? 'text-rose-600' : 'text-emerald-600'}`}>
+                          {resendResult.error ?? 'Invite resent'}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleResend(admin)}
+                        disabled={resendingId === admin.id}
+                        className="px-3 py-1.5 text-xs font-medium text-ink border border-border hover:bg-ink/5 transition-colors disabled:opacity-40"
+                      >
+                        {resendingId === admin.id ? 'Sending…' : 'Resend invite'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Danger zone */}
