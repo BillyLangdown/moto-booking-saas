@@ -32,6 +32,13 @@ export async function GET(
       startTime = slot?.start_time as string ?? startTime
       endTime   = slot?.end_time   as string ?? endTime
     }
+    if ((!startTime || !endTime) && confirmed.proposedDate) {
+      // Open Enquiry bookings only ever collect a date/time, not a duration -
+      // use a nominal 1 hour window so the confirmation email still sends.
+      const start = new Date(`${confirmed.proposedDate}T${confirmed.proposedTime ?? '09:00'}:00.000Z`)
+      startTime = start.toISOString()
+      endTime   = new Date(start.getTime() + 60 * 60 * 1000).toISOString()
+    }
 
     if (tenant && startTime && endTime) {
       await sendBookingConfirmation(confirmed, startTime, endTime, tenant)
@@ -91,6 +98,13 @@ export async function POST(
         .from('availability_slots').select('start_time, end_time').eq('id', confirmed.slotId).single()
       startTime = slot?.start_time as string ?? startTime
       endTime   = slot?.end_time   as string ?? endTime
+    }
+    if ((!startTime || !endTime) && confirmed.proposedDate) {
+      // Open Enquiry bookings only ever collect a date/time, not a duration -
+      // use a nominal 1 hour window so the confirmation email still sends.
+      const start = new Date(`${confirmed.proposedDate}T${confirmed.proposedTime ?? '09:00'}:00.000Z`)
+      startTime = start.toISOString()
+      endTime   = new Date(start.getTime() + 60 * 60 * 1000).toISOString()
     }
 
     if (tenant && startTime && endTime) {

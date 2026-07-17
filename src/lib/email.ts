@@ -427,6 +427,7 @@ export async function sendBookingDeclined(
   startTime: string,
   endTime: string,
   tenant: Tenant,
+  reason?: string,
 ): Promise<void> {
   try {
     if (!resend) return
@@ -439,6 +440,13 @@ export async function sendBookingDeclined(
       tenant.email && `Email: ${tenant.email}`,
       tenant.phone && `Phone: ${tenant.phone}`,
     ].filter(Boolean).join('\n')
+
+    const reasonBlock = reason?.trim()
+      ? `<div style="margin-top:16px;padding:16px;background:#fef2f2;border-radius:8px;font-size:13px;color:#7f1d1d;">
+        <p style="margin:0 0 4px;font-weight:600;">Message from ${tenant.name}</p>
+        <p style="margin:0;white-space:pre-line;">${reason.trim()}</p>
+      </div>`
+      : ''
 
     const html = `
 <!DOCTYPE html>
@@ -469,7 +477,7 @@ export async function sendBookingDeclined(
       </table>
 
       <p style="margin:24px 0 0;color:#64748b;font-size:14px;">Please get in touch if you'd like to arrange an alternative time.</p>
-
+      ${reasonBlock}
       ${contactLines ? `
       <div style="margin-top:16px;padding:16px;background:#f8fafc;border-radius:8px;font-size:13px;color:#64748b;">
         <p style="margin:0 0 4px;font-weight:600;color:#0f172a;">Contact us</p>
@@ -491,7 +499,7 @@ Date: ${start.date}
 Time: ${start.time} – ${end.time}
 
 Please get in touch if you'd like to arrange an alternative time.
-${contactLines ? `\nContact us:\n${contactLines}` : ''}`
+${reason?.trim() ? `\nMessage from ${tenant.name}:\n${reason.trim()}\n` : ''}${contactLines ? `\nContact us:\n${contactLines}` : ''}`
 
     const { data, error } = await resend.emails.send({
       from: FROM,
@@ -504,5 +512,57 @@ ${contactLines ? `\nContact us:\n${contactLines}` : ''}`
     else console.log('[email] Decline notification sent:', data?.id, '→', booking.email)
   } catch (err) {
     console.error('[email] Failed to send decline notification:', err)
+  }
+}
+
+export async function sendCustomMessage(
+  booking: Booking,
+  tenant: Tenant,
+  message: string,
+): Promise<void> {
+  try {
+    if (!resend) { console.warn('[email] sendCustomMessage skipped - no Resend client'); return }
+
+    const accentColor = tenant.branding?.accentColor ?? '#0f172a'
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:sans-serif;color:#0f172a;background:#f8fafc;margin:0;padding:32px 16px;">
+  <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
+    <div style="background:${accentColor};padding:24px 28px;">
+      <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">${tenant.name}</p>
+    </div>
+    <div style="padding:28px;">
+      <h1 style="margin:0 0 8px;font-size:20px;font-weight:600;">A message about your booking</h1>
+      <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Hi ${booking.name},</p>
+      <div style="padding:16px;background:#f8fafc;border-radius:8px;font-size:14px;color:#0f172a;white-space:pre-line;">${message.trim()}</div>
+      <p style="margin:20px 0 0;color:#64748b;font-size:13px;">Reply directly to this email to get back to ${tenant.name}.</p>
+    </div>
+  </div>
+</body>
+</html>`
+
+    const text = `A message from ${tenant.name} about your booking
+
+Hi ${booking.name},
+
+${message.trim()}
+
+Reply directly to this email to get back to ${tenant.name}.`
+
+    const { data, error } = await resend.emails.send({
+      from: FROM,
+      to: booking.email,
+      replyTo: tenant.email || undefined,
+      subject: `Message from ${tenant.name} about your booking`,
+      html,
+      text,
+    })
+    if (error) console.error('[email] Custom message send failed:', error)
+    else console.log('[email] Custom message sent:', data?.id, '→', booking.email)
+  } catch (err) {
+    console.error('[email] Failed to send custom message:', err)
   }
 }

@@ -17,6 +17,7 @@ interface ApiMessage {
 interface OrlaResponse {
   complete: boolean
   reply: string
+  options?: string[]
   name?: string
   email?: string
   phone?: string
@@ -37,13 +38,14 @@ export default function OpenBookChat({ tenant }: Props) {
 
   const staticGreeting: DisplayMessage = {
     role: 'assistant',
-    content: `Hi there! To get you booked in with ${tenant.name}, I just need a couple of details about what you're looking for. It only takes a minute. What can I help you with?`,
+    content: `Hi! I'm here to send your booking request to ${tenant.name} — they'll confirm by email, usually within one working day. What do you need?`,
   }
 
   const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>([staticGreeting])
   const [apiMessages, setApiMessages]         = useState<ApiMessage[]>([])
   const [input, setInput]       = useState('')
   const [loading, setLoading]   = useState(false)
+  const [options, setOptions]   = useState<string[]>([])
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const bottomRef  = useRef<HTMLDivElement>(null)
@@ -96,6 +98,7 @@ export default function OpenBookChat({ tenant }: Props) {
     setDisplayMessages(prev => [...prev, { role: 'user', content: userContent }])
     setApiMessages(nextApiMessages)
     setInput('')
+    setOptions([])
     setLoading(true)
     setSubmitError(null)
 
@@ -116,6 +119,8 @@ export default function OpenBookChat({ tenant }: Props) {
       if (data.complete) {
         // Small delay so the user can read Orla's final message before the success screen
         setTimeout(() => autoSubmit(data, withReply), 1200)
+      } else {
+        setOptions(data.options?.length ? data.options : [])
       }
     } catch {
       setSubmitError('Something went wrong. Please try again.')
@@ -244,6 +249,21 @@ export default function OpenBookChat({ tenant }: Props) {
 
       {!isComplete && (
         <div className="sticky bottom-0 bg-white border-t border-slate-200 px-4 py-3 safe-area-bottom">
+          {options.length > 0 && !loading && (
+            <div className="flex flex-wrap gap-2 max-w-xl mx-auto mb-2.5">
+              {options.map((opt, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => sendMessage(opt)}
+                  className="px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors hover:opacity-80"
+                  style={{ borderColor: accent, color: accent }}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="flex gap-2 max-w-xl mx-auto">
             <input
               ref={inputRef}
