@@ -141,6 +141,8 @@ export default function SetupWizard({ tenant, userEmail = '' }: Props) {
   // Booking mode step
   const [bookingMode, setBookingMode]       = useState<BookingMode>(tenant.bookingMode ?? 'slotted')
   const [orlaContext, setOrlaContext]        = useState(tenant.orlaBusinessContext ?? '')
+  const [orlaIntake, setOrlaIntake]          = useState(tenant.orlaIntakePrompt ?? '')
+  const [generalAvailability, setGeneralAvailability] = useState(tenant.generalAvailability ?? '')
 
   // Business step
   const [name, setName]        = useState(tenant.name)
@@ -274,6 +276,8 @@ export default function SetupWizard({ tenant, userEmail = '' }: Props) {
         accentColor:  tenant.branding.accentColor,
         bookingMode,
         orlaBusinessContext: orlaContext || undefined,
+        orlaIntakePrompt: orlaIntake || undefined,
+        generalAvailability: generalAvailability || undefined,
       })
       setSaving(false)
       setStep(3)
@@ -527,21 +531,55 @@ export default function SetupWizard({ tenant, userEmail = '' }: Props) {
             </div>
 
             {bookingMode === 'open' && (
-              <div className="bg-card shadow-sm p-5 flex flex-col gap-3">
-                <div>
-                  <label className="text-sm font-semibold text-ink">About your business</label>
-                  <p className="text-xs text-secondary mt-0.5">
-                    Tell Orla what your business does, what services you offer, and your area. This lets her understand what customers are describing. Required.
-                  </p>
+              <>
+                <div className="bg-card shadow-sm p-5 flex flex-col gap-3">
+                  <div>
+                    <label className="text-sm font-semibold text-ink">About your business</label>
+                    <p className="text-xs text-secondary mt-0.5">
+                      Tell Orla what your business does, what services you offer, and your area. This lets her understand what customers are describing. Required.
+                    </p>
+                  </div>
+                  <textarea
+                    value={orlaContext}
+                    onChange={e => setOrlaContext(e.target.value)}
+                    rows={5}
+                    placeholder={`e.g. We are a residential plumbing company based in Bristol. We cover leak repairs, boiler servicing, bathroom installations, and blocked drains. We work across Bristol and within 15 miles. We do not cover commercial properties.`}
+                    className={`${inputClass} resize-none`}
+                  />
                 </div>
-                <textarea
-                  value={orlaContext}
-                  onChange={e => setOrlaContext(e.target.value)}
-                  rows={5}
-                  placeholder={`e.g. We are a residential plumbing company based in Bristol. We cover leak repairs, boiler servicing, bathroom installations, and blocked drains. We work across Bristol and within 15 miles. We do not cover commercial properties.`}
-                  className={`${inputClass} resize-none`}
-                />
-              </div>
+
+                <div className="bg-card shadow-sm p-5 flex flex-col gap-3">
+                  <div>
+                    <label className="text-sm font-semibold text-ink">Working hours</label>
+                    <p className="text-xs text-secondary mt-0.5">
+                      Describe when you&apos;re available. Orla shares this with customers during their enquiry chat.
+                    </p>
+                  </div>
+                  <textarea
+                    value={generalAvailability}
+                    onChange={e => setGeneralAvailability(e.target.value)}
+                    rows={4}
+                    placeholder={`e.g. We work Monday to Friday, 7:30am – 5:00pm. We do not take bookings on bank holidays or weekends. Lead time is typically 2–3 weeks for new projects.`}
+                    className={`${inputClass} resize-none`}
+                  />
+                </div>
+
+                <div className="bg-card shadow-sm p-5 flex flex-col gap-3">
+                  <div>
+                    <label className="text-sm font-semibold text-ink">What Orla should collect</label>
+                    <p className="text-xs text-secondary mt-0.5">
+                      Tell Orla what specific details to gather before submitting an enquiry.
+                    </p>
+                  </div>
+                  <textarea
+                    value={orlaIntake}
+                    onChange={e => setOrlaIntake(e.target.value)}
+                    rows={4}
+                    placeholder="e.g. Ask for: type of issue, location in the property, how long it has been happening, whether it is an emergency. Always collect name, email, and phone number."
+                    className={`${inputClass} resize-none`}
+                  />
+                </div>
+              </>
             )}
           </>
         )}

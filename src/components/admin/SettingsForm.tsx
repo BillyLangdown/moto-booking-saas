@@ -155,6 +155,7 @@ export default function SettingsForm({ tenant, slotSessionTypes = [], resources:
   const [autoConfirm, setAutoConfirm]       = useState(tenant.autoConfirm)
   const [bookingMode, setBookingMode]       = useState<BookingMode>(tenant.bookingMode ?? 'slotted')
   const [orlaContext, setOrlaContext]       = useState(tenant.orlaBusinessContext ?? '')
+  const [generalAvailability, setGeneralAvailability] = useState(tenant.generalAvailability ?? '')
   const [orlaPrompt, setOrlaPrompt]         = useState(tenant.orlaIntakePrompt ?? '')
   const [savingMode, setSavingMode]         = useState(false)
   const [savedMode, setSavedMode]           = useState(false)
@@ -214,6 +215,7 @@ export default function SettingsForm({ tenant, slotSessionTypes = [], resources:
         bookingMode,
         orlaBusinessContext: orlaContext || undefined,
         orlaIntakePrompt: orlaPrompt || undefined,
+        generalAvailability: generalAvailability || undefined,
       })
       setSavedMode(true)
       setTimeout(() => setSavedMode(false), 3000)
@@ -497,6 +499,22 @@ export default function SettingsForm({ tenant, slotSessionTypes = [], resources:
               {!orlaContext.trim() && (
                 <p className="text-xs text-rose-500">This field is required for Open Enquiry mode.</p>
               )}
+            </SettingCard>
+
+            <SettingCard>
+              <div>
+                <p className="text-sm font-medium text-ink">Working hours</p>
+                <p className="text-xs text-secondary mt-0.5">
+                  Describe when you&apos;re available. Orla shares this with customers during their enquiry chat.
+                </p>
+              </div>
+              <textarea
+                value={generalAvailability}
+                onChange={e => setGeneralAvailability(e.target.value)}
+                rows={4}
+                placeholder={`e.g. We work Monday to Friday, 7:30am – 5:00pm. We do not take bookings on bank holidays or weekends. Lead time is typically 2–3 weeks for new projects.`}
+                className={`${inputClass} resize-none`}
+              />
             </SettingCard>
 
             <SettingCard>
