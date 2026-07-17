@@ -2,6 +2,24 @@
 
 import { revalidatePath } from 'next/cache'
 import { adminSupabase } from '@/lib/supabase/admin'
+import { createClient } from '@/utils/supabase/server'
+
+// Server Actions are callable directly as their own endpoints once deployed -
+// the /platform layout's getAuthSuperAdmin() redirect only protects the page,
+// not the action itself. Every exported action here must check this first.
+async function requireSuperAdmin(): Promise<string | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) return 'Not authorized'
+
+  const { data } = await adminSupabase
+    .from('users')
+    .select('role')
+    .eq('email', user.email)
+    .single()
+
+  return data?.role === 'superadmin' ? null : 'Not authorized'
+}
 
 interface CreateBusinessInput {
   name: string
@@ -19,6 +37,9 @@ interface CreateBusinessInput {
 export async function createBusinessAction(
   input: CreateBusinessInput,
 ): Promise<{ error?: string; tenantId?: string }> {
+  const authCheckError = await requireSuperAdmin()
+  if (authCheckError) return { error: authCheckError }
+
   // 1. Create tenant
   const { data: tenant, error: tenantError } = await adminSupabase
     .from('tenants')
@@ -82,6 +103,9 @@ export async function resendInviteAction(
   tenantId: string,
   email: string,
 ): Promise<{ error?: string }> {
+  const authCheckError = await requireSuperAdmin()
+  if (authCheckError) return { error: authCheckError }
+
   const { data: existing } = await adminSupabase
     .from('users')
     .select('id, role')
@@ -126,6 +150,9 @@ export async function createResourceAction(
   name: string,
   type: string,
 ): Promise<{ error?: string }> {
+  const authCheckError = await requireSuperAdmin()
+  if (authCheckError) return { error: authCheckError }
+
   const { error } = await adminSupabase
     .from('resources')
     .insert({ tenant_id: tenantId, name, type })
@@ -139,6 +166,8 @@ export async function deleteResourceAction(
   resourceId: string,
   tenantId: string,
 ): Promise<void> {
+  if (await requireSuperAdmin()) return
+
   await adminSupabase.from('resources').delete().eq('id', resourceId)
   revalidatePath(`/platform/${tenantId}`)
 }
@@ -146,6 +175,9 @@ export async function deleteResourceAction(
 export async function deleteBusinessAction(
   tenantId: string,
 ): Promise<{ error?: string }> {
+  const authCheckError = await requireSuperAdmin()
+  if (authCheckError) return { error: authCheckError }
+
   // Delete child records first to avoid FK constraint errors
   await adminSupabase.from('bookings').delete().eq('tenant_id', tenantId)
   await adminSupabase.from('availability_slots').delete().eq('tenant_id', tenantId)
