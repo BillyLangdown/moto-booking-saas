@@ -30,12 +30,20 @@ export default function AskOrlaSpotlight() {
         </Reveal>
 
         <Reveal delay={0.15}>
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-2xl">
-            <div className="flex flex-col gap-3">
+          <div className="rounded-2xl border border-border bg-card p-7 shadow-2xl sm:p-8">
+            <div className="flex flex-col gap-6">
               {CHAT.map((m, i) => (
-                <div key={i} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div key={i} className={`flex flex-col gap-1.5 ${m.from === 'user' ? 'items-end' : 'items-start'}`}>
+                  {m.from === 'orla' && (
+                    <div className="flex items-center gap-2 pl-1">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white">
+                        O
+                      </div>
+                      <span className="text-xs font-medium text-muted">Orla · AI</span>
+                    </div>
+                  )}
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                       m.from === 'user'
                         ? 'rounded-tr-sm bg-accent text-white'
                         : 'rounded-tl-sm border border-border bg-surface text-ink'

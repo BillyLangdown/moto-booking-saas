@@ -11,7 +11,7 @@ export default function MarketingFooter() {
         <div className="flex items-center gap-6 text-xs text-secondary">
           <Link href="/support" className="hover:text-ink">Support</Link>
           <Link href="/login" className="hover:text-ink">Sign in</Link>
-          <a href="mailto:hello@orlabooking.com" className="hover:text-ink">hello@orlabooking.com</a>
+          <a href="mailto:hello@williamlangdown.com" className="hover:text-ink">hello@williamlangdown.com</a>
         </div>
       </div>
     </footer>

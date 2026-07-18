@@ -42,8 +42,8 @@ export default function SupportPage() {
         <div className="mt-10 rounded-2xl border border-border bg-card p-6">
           <p className="text-sm font-medium text-ink">Contact us</p>
           <p className="mt-1.5 text-sm text-secondary">
-            <a href="mailto:hello@orlabooking.com" className="text-accent hover:underline">
-              hello@orlabooking.com
+            <a href="mailto:hello@williamlangdown.com" className="text-accent hover:underline">
+              hello@williamlangdown.com
             </a>
             . We typically reply within one working day.
           </p>
