@@ -3,35 +3,35 @@ import Reveal from './Reveal'
 const FEATURES = [
   {
     title: 'Your own booking page',
-    body: 'A branded page at your own link, showing your services, your availability, and your prices — customers book without ever emailing back and forth.',
+    body: 'A branded page at your own link with your services, availability, and prices. Customers book without emailing back and forth.',
     icon: (
       <path d="M4 4h16v16H4z M4 9h16 M9 4v16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     ),
   },
   {
     title: 'Fixed slots or open enquiry',
-    body: "Run pre-set time slots for appointments and classes, or switch to Open Enquiry so customers describe what they need in their own words.",
+    body: 'Run pre-set time slots for appointments and classes, or switch to Open Enquiry so customers describe what they need.',
     icon: (
       <path d="M12 6v6l4 2 M12 21a9 9 0 100-18 9 9 0 000 18z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     ),
   },
   {
     title: 'Ask Orla, your AI receptionist',
-    body: "For custom or project-based work, Orla chats with customers, checks your schedule, and puts a clear request in front of you to confirm or decline.",
+    body: 'For custom or project-based work, Orla chats with customers, checks your schedule, and sends you a clear request to confirm or decline.',
     icon: (
       <path d="M9 2h6a3 3 0 013 3v10a3 3 0 01-3 3H9a3 3 0 01-3-3V5a3 3 0 013-3z M12 18v3 M9 21h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     ),
   },
   {
     title: 'Synced with your calendar',
-    body: 'Connect Google Calendar or subscribe from Apple Calendar and Outlook — confirmed bookings show up automatically, no double-booking.',
+    body: 'Connect Google Calendar, or subscribe from Apple Calendar and Outlook. Confirmed bookings show up automatically, no double-booking.',
     icon: (
       <path d="M8 2v4 M16 2v4 M3 9h18 M4 4h16a1 1 0 011 1v15a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     ),
   },
   {
     title: 'Get paid on the spot',
-    body: 'Take full payment or a deposit at the time of booking with Stripe, or leave payment out of it entirely — your choice, per service.',
+    body: 'Take full payment or a deposit with Stripe at the time of booking, or leave payment out of it entirely. Your choice, per service.',
     icon: (
       <path d="M12 2v20 M17 5.5c0-1.9-2.2-3.5-5-3.5s-5 1.6-5 3.5 2.2 3.5 5 3.5 5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     ),

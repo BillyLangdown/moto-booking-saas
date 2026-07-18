@@ -45,7 +45,7 @@ export default function SupportPage() {
             <a href="mailto:hello@orlabooking.com" className="text-accent hover:underline">
               hello@orlabooking.com
             </a>
-            {' '}— we typically reply within one working day.
+            . We typically reply within one working day.
           </p>
         </div>
 

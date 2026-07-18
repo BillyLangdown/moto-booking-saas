@@ -9,7 +9,7 @@ const STEPS = [
   {
     step: '02',
     title: 'Customers book or enquire',
-    body: 'They pick a slot, or chat with Ask Orla if it’s custom work — either way, you get the details you actually need up front.',
+    body: 'They pick a slot, or chat with Ask Orla if it’s custom work. Either way, you get the details you need up front.',
   },
   {
     step: '03',

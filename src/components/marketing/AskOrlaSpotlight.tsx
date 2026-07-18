@@ -4,7 +4,7 @@ const CHAT = [
   { from: 'user', text: 'Hi, do you do boiler servicing? Mine started making a weird noise' },
   { from: 'orla', text: "Yes, that's something we cover. Roughly how long has the noise been happening, and is it constant or only when it's running?" },
   { from: 'user', text: 'Only when it kicks on, been about a week' },
-  { from: 'orla', text: "Got it. I've got a slot Thursday afternoon that works around the rest of your schedule — what's the best name, email and phone to book it under?" },
+  { from: 'orla', text: "Got it, I've got a slot Thursday afternoon that works around your schedule. What's the best name, email and phone to book it under?" },
 ]
 
 export default function AskOrlaSpotlight() {
@@ -18,15 +18,14 @@ export default function AskOrlaSpotlight() {
             <br />a fixed time slot
           </h2>
           <p className="mt-5 max-w-md text-secondary">
-            Some jobs can&apos;t be booked from a calendar grid. Open Enquiry mode
-            lets customers describe what they actually need — Orla asks the
-            right follow-up questions, checks it against your schedule and
-            working hours, and hands you a clear request to confirm or decline.
-            No enquiry gets lost in an inbox.
+            Some jobs don&apos;t fit a calendar grid. Open Enquiry mode lets
+            customers describe what they need. Orla asks the right follow-up
+            questions, checks your schedule, and hands you a clear request to
+            confirm or decline.
           </p>
           <p className="mt-4 max-w-md text-sm text-muted">
-            You stay in control the whole way — every enquiry is reviewed by
-            you before anything is confirmed.
+            You stay in control. Every enquiry is reviewed by you before
+            anything is confirmed.
           </p>
         </Reveal>
 

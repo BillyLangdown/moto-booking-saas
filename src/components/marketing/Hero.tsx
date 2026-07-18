@@ -53,10 +53,9 @@ export default function Hero() {
           transition={{ duration: 0.7, delay: 0.25 }}
           className="mx-auto mt-8 max-w-xl text-balance text-base text-secondary sm:text-lg"
         >
-          Orla runs your bookings end to end — a branded booking page, an AI
-          receptionist for enquiries that don&apos;t fit a fixed slot, and one
-          dashboard (web or iOS) to confirm, get paid, and stay in sync with
-          your calendar.
+          A branded booking page, one dashboard to confirm bookings and get
+          paid, and an AI assistant for enquiries that don&apos;t fit a fixed
+          slot. Works on web and iOS.
         </motion.p>
 
         <motion.div
