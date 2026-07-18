@@ -1,18 +1,25 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/utils/supabase/server'
-import { adminSupabase } from '@/lib/supabase/admin'
+import MarketingNav from '@/components/marketing/MarketingNav'
+import Hero from '@/components/marketing/Hero'
+import LogoMarquee from '@/components/marketing/LogoMarquee'
+import Features from '@/components/marketing/Features'
+import HowItWorks from '@/components/marketing/HowItWorks'
+import AskOrlaSpotlight from '@/components/marketing/AskOrlaSpotlight'
+import MarketingCTA from '@/components/marketing/MarketingCTA'
+import MarketingFooter from '@/components/marketing/MarketingFooter'
 
-export default async function RootPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
-
-  const { data } = await adminSupabase
-    .from('users')
-    .select('role')
-    .eq('email', user.email!)
-    .single()
-
-  redirect(data?.role === 'superadmin' ? '/platform' : '/dashboard/bookings')
+export default function HomePage() {
+  return (
+    <>
+      <MarketingNav />
+      <main>
+        <Hero />
+        <LogoMarquee />
+        <Features />
+        <HowItWorks />
+        <AskOrlaSpotlight />
+        <MarketingCTA />
+      </main>
+      <MarketingFooter />
+    </>
+  )
 }

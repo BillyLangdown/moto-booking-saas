@@ -10,6 +10,7 @@
   --color-muted:        #ffffff59;
   --color-accent:       #2563EB;
   --color-accent-hover: #1d4ed8;
+  --font-display:       var(--font-display);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -68,3 +69,22 @@ button, input, select, textarea { border-radius: 6px; }
 
 /* Tabular number support */
 .tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* Marketing homepage */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 26s linear infinite;
+}
+
+@keyframes blob-float {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(24px, -18px); }
+}
+
+.animate-blob-float {
+  animation: blob-float 12s ease-in-out infinite;
+}
