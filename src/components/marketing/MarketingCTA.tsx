@@ -14,7 +14,7 @@ export default function MarketingCTA() {
         </p>
         <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <a
-            href="mailto:hello@orlabooking.com"
+            href="mailto:hello@williamlangdown.com"
             className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
           >
             Get Orla for your business
