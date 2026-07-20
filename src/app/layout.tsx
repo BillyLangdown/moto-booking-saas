@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Manrope } from 'next/font/google'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
+const manrope = Manrope({ subsets: ['latin'], weight: ['700', '800'], variable: '--font-display' })
 
 export const metadata: Metadata = {
   title: 'Orla',
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB" suppressHydrationWarning>
+    <html lang="en-GB" suppressHydrationWarning className={manrope.variable}>
       <body className={inter.className}>{children}</body>
     </html>
   )

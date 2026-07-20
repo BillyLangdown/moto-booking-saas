@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { bookingService } from '@/services/bookingService'
 import { tenantService } from '@/services/tenantService'
-import { sendMessageToCustomer } from '@/lib/email'
+import { sendCustomMessage } from '@/lib/email'
 
+// Mobile-only: lets an admin email a booking's customer directly (e.g. to
+// ask for more detail on an Open Enquiry) without confirming or declining it.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -22,23 +24,24 @@ export async function POST(
   const { data: { user } } = await userClient.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: tenantId, error: tidErr } = await userClient.rpc('get_my_tenant_id')
-  if (tidErr || !tenantId) return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
-
-  const body = (await req.json()) as { message?: string }
-  const message = body.message?.trim()
+  let message: string
+  try {
+    const body = await req.json() as { message?: string }
+    message = body?.message?.trim() ?? ''
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
   if (!message) return NextResponse.json({ error: 'Message is required' }, { status: 400 })
 
   try {
     const booking = await bookingService.getBookingById(id)
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
-    if (booking.tenantId !== tenantId) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     if (!booking.email) return NextResponse.json({ error: 'This booking has no customer email on file' }, { status: 400 })
 
-    const tenant = await tenantService.getTenantById(tenantId as string)
+    const tenant = await tenantService.getTenantById(booking.tenantId)
     if (!tenant) return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
 
-    await sendMessageToCustomer(booking, tenant, message)
+    await sendCustomMessage(booking, tenant, message)
 
     return NextResponse.json({ ok: true })
   } catch (err) {

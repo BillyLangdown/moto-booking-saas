@@ -2,10 +2,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { bookingService } from '@/services/bookingService'
 import { tenantService } from '@/services/tenantService'
+import { adminSupabase } from '@/lib/supabase/admin'
 import { sendBookingDeclined } from '@/lib/email'
+import type { Booking } from '@/types'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL
   ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+
+async function resolveBookingTimes(booking: Booking): Promise<{ startTime?: string; endTime?: string }> {
+  let startTime = booking.startTimeIso
+  let endTime   = booking.endTimeIso
+  if ((!startTime || !endTime) && booking.slotId) {
+    const { data: slot } = await adminSupabase
+      .from('availability_slots').select('start_time, end_time').eq('id', booking.slotId).single()
+    startTime = slot?.start_time as string ?? startTime
+    endTime   = slot?.end_time   as string ?? endTime
+  }
+  if ((!startTime || !endTime) && booking.proposedDate) {
+    // Open Enquiry bookings only ever collect a date/time, not a duration -
+    // use a nominal 1 hour window so the decline email still sends.
+    const start = new Date(`${booking.proposedDate}T${booking.proposedTime ?? '09:00'}:00.000Z`)
+    startTime = start.toISOString()
+    endTime   = new Date(start.getTime() + 60 * 60 * 1000).toISOString()
+  }
+  return { startTime, endTime }
+}
 
 export async function GET(
   _req: NextRequest,
@@ -22,8 +43,9 @@ export async function GET(
     await bookingService.cancelBooking(id)
     const tenant = await tenantService.getTenantById(booking.tenantId)
 
-    if (tenant && booking.startTimeIso && booking.endTimeIso) {
-      await sendBookingDeclined(booking, booking.startTimeIso, booking.endTimeIso, tenant)
+    const { startTime, endTime } = await resolveBookingTimes(booking)
+    if (tenant && startTime && endTime) {
+      await sendBookingDeclined(booking, startTime, endTime, tenant)
     }
 
     return page(
@@ -56,6 +78,14 @@ export async function POST(
   const { data: { user } } = await userClient.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  let reason: string | undefined
+  try {
+    const body = await req.json() as { reason?: string }
+    reason = body?.reason?.trim() || undefined
+  } catch {
+    // No body (e.g. the confirm/deny email links) - decline with no reason.
+  }
+
   try {
     const booking = await bookingService.getBookingById(id)
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
@@ -64,8 +94,9 @@ export async function POST(
 
     await bookingService.cancelBooking(id)
     const tenant = await tenantService.getTenantById(booking.tenantId)
-    if (tenant && booking.startTimeIso && booking.endTimeIso) {
-      await sendBookingDeclined(booking, booking.startTimeIso, booking.endTimeIso, tenant)
+    const { startTime, endTime } = await resolveBookingTimes(booking)
+    if (tenant && startTime && endTime) {
+      await sendBookingDeclined(booking, startTime, endTime, tenant, reason)
     }
 
     return NextResponse.json({ ok: true })
