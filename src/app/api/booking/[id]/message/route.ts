@@ -24,6 +24,9 @@ export async function POST(
   const { data: { user } } = await userClient.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: tenantId, error: tidErr } = await userClient.rpc('get_my_tenant_id')
+  if (tidErr || !tenantId) return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+
   let message: string
   try {
     const body = await req.json() as { message?: string }
@@ -36,6 +39,7 @@ export async function POST(
   try {
     const booking = await bookingService.getBookingById(id)
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    if (booking.tenantId !== tenantId) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     if (!booking.email) return NextResponse.json({ error: 'This booking has no customer email on file' }, { status: 400 })
 
     const tenant = await tenantService.getTenantById(booking.tenantId)

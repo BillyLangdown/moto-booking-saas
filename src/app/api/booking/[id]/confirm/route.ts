@@ -82,9 +82,13 @@ export async function POST(
   const { data: { user } } = await userClient.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: tenantId, error: tidErr } = await userClient.rpc('get_my_tenant_id')
+  if (tidErr || !tenantId) return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+
   try {
     const booking = await bookingService.getBookingById(id)
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    if (booking.tenantId !== tenantId) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     if (booking.status === 'confirmed') return NextResponse.json({ ok: true, alreadyConfirmed: true })
     if (booking.status === 'cancelled') return NextResponse.json({ error: 'Booking is cancelled' }, { status: 400 })
 
