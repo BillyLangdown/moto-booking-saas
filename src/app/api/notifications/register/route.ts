@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       { global: { headers: { authorization: `Bearer ${token}` } } }
     )
 
-    const { data: { user }, error: authError } = await userClient.auth.getUser()
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token)
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()

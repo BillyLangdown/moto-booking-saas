@@ -75,7 +75,7 @@ export async function POST(
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     { global: { headers: { authorization: `Bearer ${accessToken}` } } }
   )
-  const { data: { user } } = await userClient.auth.getUser()
+  const { data: { user } } = await userClient.auth.getUser(accessToken)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: tenantId, error: tidErr } = await userClient.rpc('get_my_tenant_id')

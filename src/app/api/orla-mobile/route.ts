@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   )
-  const { data: { user }, error: authError } = await anonClient.auth.getUser()
+  const { data: { user }, error: authError } = await anonClient.auth.getUser(token)
   if (authError || !user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
