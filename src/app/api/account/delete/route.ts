@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { adminSupabase } from '@/lib/supabase/admin'
-import { deleteBusinessAction } from '@/app/platform/actions'
+import { tenantService } from '@/services/tenantService'
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('authorization') ?? ''
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     .from('users').select('tenant_id').eq('id', user.id).single()
   if (userErr || !userRow?.tenant_id) return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
 
-  const { error } = await deleteBusinessAction(userRow.tenant_id as string)
+  const { error } = await tenantService.deleteTenantCascade(userRow.tenant_id as string)
   if (error) return NextResponse.json({ error }, { status: 500 })
 
   return NextResponse.json({ success: true })

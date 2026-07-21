@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { adminSupabase } from '@/lib/supabase/admin'
 import { createClient } from '@/utils/supabase/server'
+import { tenantService } from '@/services/tenantService'
 
 // Server Actions are callable directly as their own endpoints once deployed -
 // the /platform layout's getAuthSuperAdmin() redirect only protects the page,
@@ -178,28 +179,8 @@ export async function deleteBusinessAction(
   const authCheckError = await requireSuperAdmin()
   if (authCheckError) return { error: authCheckError }
 
-  // Delete child records first to avoid FK constraint errors
-  await adminSupabase.from('bookings').delete().eq('tenant_id', tenantId)
-  await adminSupabase.from('availability_slots').delete().eq('tenant_id', tenantId)
-  await adminSupabase.from('resources').delete().eq('tenant_id', tenantId)
-
-  // Fetch and delete auth users linked to this tenant (never touch superadmins)
-  const { data: users } = await adminSupabase
-    .from('users')
-    .select('id, role')
-    .eq('tenant_id', tenantId)
-    .neq('role', 'superadmin')
-
-  if (users?.length) {
-    for (const u of users) {
-      await adminSupabase.auth.admin.deleteUser(u.id)
-    }
-  }
-
-  await adminSupabase.from('users').delete().eq('tenant_id', tenantId)
-
-  const { error } = await adminSupabase.from('tenants').delete().eq('id', tenantId)
-  if (error) return { error: error.message }
+  const { error } = await tenantService.deleteTenantCascade(tenantId)
+  if (error) return { error }
 
   revalidatePath('/platform')
   return {}

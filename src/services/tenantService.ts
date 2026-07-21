@@ -135,4 +135,32 @@ export const tenantService = {
     const { error } = await supabase.from('tenants').update(updates).eq('id', id)
     if (error) throw new Error(error.message)
   },
+
+  // Plain (non-server-action) deletion logic shared by the superadmin panel
+  // and the mobile self-service "delete account" flow - each caller is
+  // responsible for its own authorization check before calling this.
+  async deleteTenantCascade(tenantId: string): Promise<{ error?: string }> {
+    await supabase.from('bookings').delete().eq('tenant_id', tenantId)
+    await supabase.from('availability_slots').delete().eq('tenant_id', tenantId)
+    await supabase.from('resources').delete().eq('tenant_id', tenantId)
+
+    const { data: users } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('tenant_id', tenantId)
+      .neq('role', 'superadmin')
+
+    if (users?.length) {
+      for (const u of users) {
+        await supabase.auth.admin.deleteUser(u.id)
+      }
+    }
+
+    await supabase.from('users').delete().eq('tenant_id', tenantId)
+
+    const { error } = await supabase.from('tenants').delete().eq('id', tenantId)
+    if (error) return { error: error.message }
+
+    return {}
+  },
 }
