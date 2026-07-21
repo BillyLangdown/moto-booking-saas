@@ -117,8 +117,10 @@ export default function OpenBookChat({ tenant }: Props) {
       setApiMessages(withReply)
 
       if (data.complete) {
-        // Small delay so the user can read Orla's final message before the success screen
-        setTimeout(() => autoSubmit(data, withReply), 1200)
+        // Give the user time to actually read Orla's final message before the
+        // success screen replaces it - scale with message length, not a fixed delay.
+        const readDelay = Math.min(4500, Math.max(1800, reply.length * 45))
+        setTimeout(() => autoSubmit(data, withReply), readDelay)
       } else {
         setOptions(data.options?.length ? data.options : [])
       }
@@ -153,8 +155,8 @@ export default function OpenBookChat({ tenant }: Props) {
           </div>
           <div className="text-center">
             <h2 className="text-2xl font-semibold text-slate-900">Enquiry sent</h2>
-            <p className="text-slate-500 mt-2 max-w-xs leading-relaxed">
-              {tenant.name} has received your enquiry and will be in touch shortly to confirm.
+            <p className="text-slate-500 mt-2 max-w-sm leading-relaxed">
+              {tenant.name} will be in touch shortly to confirm.
             </p>
           </div>
         </div>
@@ -168,9 +170,9 @@ export default function OpenBookChat({ tenant }: Props) {
     <div className="min-h-dvh flex flex-col bg-slate-50">
       <ChatHeader tenant={tenant} accent={accent} />
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-3 max-w-xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 flex flex-col gap-3 max-w-xl mx-auto w-full">
         {displayMessages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          <div key={i} className={`flex animate-settle ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {m.role === 'assistant' && (
               <div
                 className="h-7 w-7 rounded-full shrink-0 mr-2 mt-0.5 flex items-center justify-center text-white text-xs font-bold"
@@ -256,7 +258,7 @@ export default function OpenBookChat({ tenant }: Props) {
                   key={i}
                   type="button"
                   onClick={() => sendMessage(opt)}
-                  className="px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors hover:opacity-80"
+                  className="tap-transparent px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors hover:opacity-80 active:scale-95"
                   style={{ borderColor: accent, color: accent }}
                 >
                   {opt}
@@ -278,13 +280,13 @@ export default function OpenBookChat({ tenant }: Props) {
               }}
               placeholder="Describe what you need help with…"
               disabled={loading}
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition disabled:opacity-50"
-              style={{ '--tw-ring-color': accent + '40' } as React.CSSProperties}
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition disabled:opacity-50"
+              style={{ '--tw-ring-color': accent + '40', fontSize: '16px' } as React.CSSProperties}
             />
             <button
               onClick={() => input.trim() && !loading && sendMessage(input.trim())}
               disabled={!input.trim() || loading}
-              className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-white transition-opacity disabled:opacity-40"
+              className="tap-transparent h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-white transition-transform active:scale-90 disabled:opacity-40"
               style={{ background: accent }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

@@ -153,6 +153,16 @@ export default function LoginPage() {
 
         </div>
 
+        {mode === 'signin' && (
+          <p className="text-center text-xs text-white/40 mt-6">
+            New here?{' '}
+            <a href="mailto:william@williamlangdown.com" className="text-white/70 hover:text-white transition-colors">
+              Get in touch
+            </a>{' '}
+            to get set up.
+          </p>
+        )}
+
       </div>
     </div>
   )

@@ -38,6 +38,14 @@ button, input, select, textarea { border-radius: 6px; }
   input, select, textarea { font-size: 16px; }
 }
 
+.safe-area-bottom {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+.tap-transparent {
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Calm settle-in motion for booking cards */
 @keyframes card-settle {
   from { opacity: 0; transform: translateY(6px); }
