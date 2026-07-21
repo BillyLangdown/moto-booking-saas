@@ -11,7 +11,6 @@ export async function POST(req: NextRequest) {
     const userClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      { global: { headers: { authorization: `Bearer ${token}` } } }
     )
 
     const { data: { user }, error: authError } = await userClient.auth.getUser(token)

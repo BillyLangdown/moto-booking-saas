@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { adminSupabase } from '@/lib/supabase/admin'
 import { bookingService } from '@/services/bookingService'
 import { tenantService } from '@/services/tenantService'
 import { sendCustomMessage } from '@/lib/email'
@@ -19,13 +20,14 @@ export async function POST(
   const userClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { global: { headers: { authorization: `Bearer ${accessToken}` } } }
   )
   const { data: { user } } = await userClient.auth.getUser(accessToken)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: tenantId, error: tidErr } = await userClient.rpc('get_my_tenant_id')
-  if (tidErr || !tenantId) return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+  const { data: userRow, error: userErr } = await adminSupabase
+    .from('users').select('tenant_id').eq('id', user.id).single()
+  if (userErr || !userRow?.tenant_id) return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+  const tenantId = userRow.tenant_id as string
 
   let message: string
   try {
